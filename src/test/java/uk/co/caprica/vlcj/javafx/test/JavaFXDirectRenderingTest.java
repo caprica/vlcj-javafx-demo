@@ -14,14 +14,19 @@
  * You should have received a copy of the GNU General Public License
  * along with VLCJ.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Copyright 2009, 2010, 2011, 2012, 2013 Caprica Software Limited.
+ * Copyright 2009, 2010, 2011, 2012, 2013, 2014 Caprica Software Limited.
  */
 
 package uk.co.caprica.vlcj.javafx.test;
 
 import java.nio.ByteBuffer;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.image.PixelFormat;
@@ -29,10 +34,11 @@ import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritablePixelFormat;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import uk.co.caprica.vlcj.component.DirectMediaPlayerComponent;
 import uk.co.caprica.vlcj.player.direct.BufferFormat;
 import uk.co.caprica.vlcj.player.direct.BufferFormatCallback;
-import uk.co.caprica.vlcj.player.direct.DirectMediaPlayer;
+import uk.co.caprica.vlcj.player.direct.DefaultDirectMediaPlayer;
 import uk.co.caprica.vlcj.player.direct.format.RV32BufferFormat;
 
 import com.sun.jna.Memory;
@@ -45,11 +51,13 @@ import com.sun.jna.Memory;
  * This test can render the video at a fixed size, or it can take the size from the
  * video itself.
  * <p>
- * -Dprism.verbose=true
- * <p>
  * You may need to set -Djna.library.path=[path-to-libvlc] on the command-line.
  * <p>
  * Based on an example contributed by John Hendrikx.
+ * <p>
+ * -Dprism.verbose=true -Xmx512m -verbose:gc
+ * <p>
+ * This version works with JavaFX on JDK 1.8, without "wrong thread" errors.
  */
 public final class JavaFXDirectRenderingTest extends Application {
 
@@ -67,12 +75,12 @@ public final class JavaFXDirectRenderingTest extends Application {
     /**
      * Target width, unless {@link #useSourceSize} is set.
      */
-    private static final int WIDTH = 1920;
+    private static final int WIDTH = 1280;
 
     /**
      * Target height, unless {@link #useSourceSize} is set.
      */
-    private static final int HEIGHT = 1080;
+    private static final int HEIGHT = 720;
 
     /**
      * Lightweight JavaFX canvas, the video is rendered here.
@@ -112,6 +120,15 @@ public final class JavaFXDirectRenderingTest extends Application {
     /**
      *
      */
+    private final Timeline timeline;
+
+//    static {
+//        NativeLibrary.addSearchPath(RuntimeUtil.getLibVlcLibraryName(), "/home/linux/vlc/install/lib");
+//    }
+
+    /**
+     *
+     */
     public JavaFXDirectRenderingTest() {
         canvas = new Canvas();
 
@@ -122,6 +139,14 @@ public final class JavaFXDirectRenderingTest extends Application {
         borderPane.setCenter(canvas);
 
         mediaPlayerComponent = new TestMediaPlayerComponent();
+
+        // FIXME change to suit
+        double fps = 30;
+
+        timeline = new Timeline();
+        timeline.setCycleCount(Timeline.INDEFINITE);
+        double duration = 1000 / fps;
+        timeline.getKeyFrames().add(new KeyFrame(Duration.millis(duration), nextFrame));
     }
 
     @Override
@@ -136,10 +161,16 @@ public final class JavaFXDirectRenderingTest extends Application {
         primaryStage.show();
 
         mediaPlayerComponent.getMediaPlayer().playMedia(VIDEO_FILE);
+
+        mediaPlayerComponent.getMediaPlayer().setPosition(0.3f);
+
+        timeline.playFromStart();
     }
 
     @Override
     public void stop() throws Exception {
+        timeline.stop();
+
         mediaPlayerComponent.getMediaPlayer().stop();
         mediaPlayerComponent.getMediaPlayer().release();
     }
@@ -149,13 +180,6 @@ public final class JavaFXDirectRenderingTest extends Application {
      * the video to a JavaFX canvas.
      */
     private class TestMediaPlayerComponent extends DirectMediaPlayerComponent {
-
-        @Override
-        public void display(DirectMediaPlayer mediaPlayer, Memory[] nativeBuffers, BufferFormat bufferFormat) {
-            Memory nativeBuffer = nativeBuffers[0];
-            ByteBuffer byteBuffer = nativeBuffer.getByteBuffer(0, nativeBuffer.size());
-            pixelWriter.setPixels(0, 0, bufferFormat.getWidth(), bufferFormat.getHeight(), pixelFormat, byteBuffer, bufferFormat.getPitches()[0]);
-        }
 
         public TestMediaPlayerComponent() {
             super(new TestBufferFormatCallback());
@@ -169,8 +193,8 @@ public final class JavaFXDirectRenderingTest extends Application {
 
         @Override
         public BufferFormat getBufferFormat(int sourceWidth, int sourceHeight) {
-            int width;
-            int height;
+            final int width;
+            final int height;
             if (useSourceSize) {
                 width = sourceWidth;
                 height = sourceHeight;
@@ -179,13 +203,33 @@ public final class JavaFXDirectRenderingTest extends Application {
                 width = WIDTH;
                 height = HEIGHT;
             }
-            canvas.setWidth(width);
-            canvas.setHeight(height);
-            stage.setWidth(width);
-            stage.setHeight(height);
+            Platform.runLater(new Runnable () {
+                @Override
+                public void run() {
+                    canvas.setWidth(width);
+                    canvas.setHeight(height);
+                    stage.setWidth(width);
+                    stage.setHeight(height);
+                }
+            });
             return new RV32BufferFormat(width, height);
         }
     }
+
+    private final EventHandler<ActionEvent> nextFrame = new EventHandler<ActionEvent>() {
+        @Override
+        public void handle(ActionEvent t) {
+            Memory[] nativeBuffers = mediaPlayerComponent.getMediaPlayer().lock();
+            if (nativeBuffers != null) {
+                // FIXME there may be more efficient ways to do this...
+                Memory nativeBuffer = nativeBuffers[0];
+                ByteBuffer byteBuffer = nativeBuffer.getByteBuffer(0, nativeBuffer.size());
+                BufferFormat bufferFormat = ((DefaultDirectMediaPlayer) mediaPlayerComponent.getMediaPlayer()).getBufferFormat();
+                pixelWriter.setPixels(0, 0, bufferFormat.getWidth(), bufferFormat.getHeight(), pixelFormat, byteBuffer, bufferFormat.getPitches()[0]);
+            }
+            mediaPlayerComponent.getMediaPlayer().unlock();
+        };
+    };
 
     /**
      * Application entry point.
