@@ -29,4 +29,4 @@ nVidia cards seem to be better supported at the moment.
 
 If your video card is not supported then JavaFX will fall back to a software renderer. This will hobble your video playback performance.
 
-There is some better news: under Java8 (currently available in early access form) some modern mainstream AMD graphic cards seem better supported. Under Java8 this sample application is working fine with a Radeon HD 7700 series video card on Linux.
+Java8 seems much better - i.e. some modern mainstream AMD graphic cards seem better supported. Under Java8 this sample application is working fine with a Radeon HD 7700 series video card on Linux.
