@@ -40,8 +40,10 @@ import uk.co.caprica.vlcj.player.direct.BufferFormat;
 import uk.co.caprica.vlcj.player.direct.BufferFormatCallback;
 import uk.co.caprica.vlcj.player.direct.DefaultDirectMediaPlayer;
 import uk.co.caprica.vlcj.player.direct.format.RV32BufferFormat;
+import uk.co.caprica.vlcj.runtime.RuntimeUtil;
 
 import com.sun.jna.Memory;
+import com.sun.jna.NativeLibrary;
 
 /**
  * Example showing how to render video to a JavaFX Canvas component.
@@ -64,7 +66,7 @@ public final class JavaFXDirectRenderingTest extends Application {
     /**
      * Filename of the video to play.
      */
-    private static final String VIDEO_FILE = "movie.mpg";
+    private static final String VIDEO_FILE = "/big/video/dvd-iso/Inception.iso";
 
     /**
      * Set this to <code>true</code> to resize the display to the dimensions of the
@@ -122,9 +124,9 @@ public final class JavaFXDirectRenderingTest extends Application {
      */
     private final Timeline timeline;
 
-//    static {
-//        NativeLibrary.addSearchPath(RuntimeUtil.getLibVlcLibraryName(), "/home/linux/vlc/install/lib");
-//    }
+    static {
+        NativeLibrary.addSearchPath(RuntimeUtil.getLibVlcLibraryName(), "/home/linux/vlc/install/lib");
+    }
 
     /**
      *
@@ -222,10 +224,16 @@ public final class JavaFXDirectRenderingTest extends Application {
             Memory[] nativeBuffers = mediaPlayerComponent.getMediaPlayer().lock();
             if (nativeBuffers != null) {
                 // FIXME there may be more efficient ways to do this...
+                // Since this is now being called by a specific rendering time, independent of the native video callbacks being
+                // invoked, some more defensive conditional checks are needed
                 Memory nativeBuffer = nativeBuffers[0];
-                ByteBuffer byteBuffer = nativeBuffer.getByteBuffer(0, nativeBuffer.size());
-                BufferFormat bufferFormat = ((DefaultDirectMediaPlayer) mediaPlayerComponent.getMediaPlayer()).getBufferFormat();
-                pixelWriter.setPixels(0, 0, bufferFormat.getWidth(), bufferFormat.getHeight(), pixelFormat, byteBuffer, bufferFormat.getPitches()[0]);
+                if (nativeBuffer != null) {
+                    ByteBuffer byteBuffer = nativeBuffer.getByteBuffer(0, nativeBuffer.size());
+                    BufferFormat bufferFormat = ((DefaultDirectMediaPlayer) mediaPlayerComponent.getMediaPlayer()).getBufferFormat();
+                    if (bufferFormat.getWidth() > 0 && bufferFormat.getHeight() > 0) {
+                        pixelWriter.setPixels(0, 0, bufferFormat.getWidth(), bufferFormat.getHeight(), pixelFormat, byteBuffer, bufferFormat.getPitches()[0]);
+                    }
+                }
             }
             mediaPlayerComponent.getMediaPlayer().unlock();
         };

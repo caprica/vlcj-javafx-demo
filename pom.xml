@@ -58,22 +58,11 @@
         <url>git@github.com:caprica/vlcj-javafx.git</url>
     </scm>
 
-    <properties>
-        <java.home>/home/java/jdk1.7/jre</java.home>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>uk.co.caprica</groupId>
             <artifactId>vlcj</artifactId>
             <version>3.1.0</version>
-        </dependency>
-        <dependency>
-            <groupId>javafx</groupId>
-            <artifactId>javafx</artifactId>
-            <version>2.1</version>
-            <scope>system</scope>
-            <systemPath>${java.home}/lib/jfxrt.jar</systemPath>
         </dependency>
     </dependencies>
     
@@ -92,8 +81,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>2.3.2</version>
                 <configuration>
-                    <source>1.7</source>
-                    <target>1.7</target>
+                    <source>1.8</source>
+                    <target>1.8</target>
                     <encoding>UTF-8</encoding>
                 </configuration>
             </plugin>
