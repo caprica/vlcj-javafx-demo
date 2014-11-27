@@ -164,7 +164,7 @@ public final class JavaFXDirectRenderingTest extends Application {
 
         mediaPlayerComponent.getMediaPlayer().playMedia(VIDEO_FILE);
 
-        mediaPlayerComponent.getMediaPlayer().setPosition(0.3f);
+        mediaPlayerComponent.getMediaPlayer().setPosition(0.7f);
 
         timeline.playFromStart();
     }
