@@ -66,7 +66,7 @@
         <dependency>
             <groupId>uk.co.caprica</groupId>
             <artifactId>vlcj</artifactId>
-            <version>2.2.0</version>
+            <version>3.1.0</version>
         </dependency>
         <dependency>
             <groupId>javafx</groupId>
