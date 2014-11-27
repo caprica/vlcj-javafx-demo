@@ -13,9 +13,7 @@ Getting Started
 
 At the moment this is rough and ready.
 
-You will need to make a small edit to the pom.xml to specify the location of your java.home installation. This is needed to properly resolve the JavaFX dependency.
-
-You will also need to edit the test class itself to specify the video file name.
+You will need to edit the test class itself to specify the video file name.
  
 Patches/pull-requests are welcome to improve this example.
 
