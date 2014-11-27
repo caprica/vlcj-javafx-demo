@@ -47,6 +47,8 @@ Using the standard JVM settings (default garbage collector):
 
 ![Standard JVM Settings Memory Profile](https://github.com/caprica/vlcj-javafx/raw/master/doc/memory-profile-default-options.png "Standard Options Memory Profile")
 
+This test case plays a DVD ISO.
+
 I can't really explain the behaviour of the garbage collector, it seems erratic and to change behaviour over time.
 
-Nevertheless, there is clearly no memory leak.
+Nevertheless, there is clearly no memory leak, and it can run consistently in under 100Mb of heap memory.
