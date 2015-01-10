@@ -7,6 +7,15 @@ Demo showing how vlcj can be used to render video to a JavaFX 2.x Canvas.
 
 This uses the vlcj direct rendering media player component. It can not hope to perform as well as the native heavyweight rendering using an AWT Canvas, but nevertheless smooth full HD playback is possible.
 
+There are three tests showing how to play video in JavaFX, each extends a common test-case with a specific timer implementation:
+
+ - JavaFX Timeline;
+ - Bespoke "NanoTimer" using a JavaFX ScheduledService;
+ - JavaFX AnimationTimer 
+
+All examples work acceptably.
+
+The AnimationTimer is the simplest to implement.
 
 Getting Started
 ---------------
