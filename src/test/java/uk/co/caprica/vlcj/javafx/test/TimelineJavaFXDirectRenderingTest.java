@@ -27,7 +27,7 @@ import javafx.event.EventHandler;
 import javafx.util.Duration;
 
 /**
- * Implementation of a JavaFX direct rendering media player that uses a javafx animation Timeline.
+ * Implementation of a JavaFX direct rendering media player that uses a JavaFX animation Timeline.
  */
 public class TimelineJavaFXDirectRenderingTest extends JavaFXDirectRenderingTest {
 
