@@ -38,7 +38,6 @@ If your video card is not supported then JavaFX will fall back to a software ren
 
 Java8 seems much better - i.e. some modern mainstream AMD graphic cards seem better supported. Under Java8 this sample application is working fine with a Radeon HD 7700 series video card on Linux.
 
-
 Java/JavaFX Versions
 --------------------
 
@@ -46,6 +45,16 @@ This example project now requires JDK 1.8.
 
 Note that it is still possible in your own projects to use the same approach as this project on JDK 1.7 if you need to support that.
 
+Notes
+-----
+
+Contemporary versions of JavaFX provide a SwingNode so that it is possible to embed Swing components inside a JavaFX scene - so why not use this for vlcj?
+
+Well, vlcj still would require a heavyweight AWT Canvas, and heavyweight components do not work with the SwingNode component.
+
+So whichever way you look at it, you're stuck with direct rendering, as per the test cases provided by this project.
+
+What might be an option for you is to go the otherway, using Swing/AWT for your vlcj video window and embedding a JavaFX scene inside your Swing application.
 
 Memory Profile
 --------------
