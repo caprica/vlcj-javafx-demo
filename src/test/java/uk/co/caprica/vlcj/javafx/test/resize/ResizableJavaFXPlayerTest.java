@@ -19,12 +19,12 @@
 
 package uk.co.caprica.vlcj.javafx.test.resize;
 
-import java.nio.ByteBuffer;
-
+import com.sun.jna.Memory;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.property.FloatProperty;
 import javafx.beans.property.SimpleFloatProperty;
+import javafx.event.EventHandler;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.image.ImageView;
@@ -36,13 +36,14 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 import uk.co.caprica.vlcj.component.DirectMediaPlayerComponent;
 import uk.co.caprica.vlcj.player.direct.BufferFormat;
 import uk.co.caprica.vlcj.player.direct.BufferFormatCallback;
 import uk.co.caprica.vlcj.player.direct.DirectMediaPlayer;
 import uk.co.caprica.vlcj.player.direct.format.RV32BufferFormat;
 
-import com.sun.jna.Memory;
+import java.nio.ByteBuffer;
 
 /**
  * Example showing how to dynamically resize video.
@@ -91,6 +92,15 @@ public class ResizableJavaFXPlayerTest extends Application {
         primaryStage.setScene(scene);
         mediaPlayerComponent.getMediaPlayer().prepareMedia(PATH_TO_VIDEO);
         mediaPlayerComponent.getMediaPlayer().start();
+
+        primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
+            @Override
+            public void handle(WindowEvent event) {
+                Platform.exit();
+                System.exit(0);
+            }
+        });
+
         primaryStage.show();
     }
 
