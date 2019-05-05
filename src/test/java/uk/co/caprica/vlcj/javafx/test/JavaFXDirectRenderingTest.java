@@ -20,37 +20,42 @@
 package uk.co.caprica.vlcj.javafx.test;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.Semaphore;
 
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.Button;
 import javafx.scene.image.PixelFormat;
 import javafx.scene.image.PixelWriter;
+import javafx.scene.image.WritableImage;
 import javafx.scene.image.WritablePixelFormat;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.paint.Color;
+import javafx.scene.transform.Affine;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import uk.co.caprica.vlcj.component.DirectMediaPlayerComponent;
-import uk.co.caprica.vlcj.player.direct.BufferFormat;
-import uk.co.caprica.vlcj.player.direct.BufferFormatCallback;
-import uk.co.caprica.vlcj.player.direct.DefaultDirectMediaPlayer;
-import uk.co.caprica.vlcj.player.direct.format.RV32BufferFormat;
 
-import com.sun.jna.Memory;
+import uk.co.caprica.vlcj.factory.MediaPlayerFactory;
+import uk.co.caprica.vlcj.player.base.MediaPlayer;
+import uk.co.caprica.vlcj.player.embedded.EmbeddedMediaPlayer;
+import uk.co.caprica.vlcj.player.embedded.videosurface.CallbackVideoSurface;
+import uk.co.caprica.vlcj.player.embedded.videosurface.VideoSurfaceAdapters;
+import uk.co.caprica.vlcj.player.embedded.videosurface.callback.BufferFormat;
+import uk.co.caprica.vlcj.player.embedded.videosurface.callback.BufferFormatCallback;
+import uk.co.caprica.vlcj.player.embedded.videosurface.callback.RenderCallback;
+import uk.co.caprica.vlcj.player.embedded.videosurface.callback.format.RV32BufferFormat;
 
 /**
  * Example showing how to render video to a JavaFX Canvas component.
  * <p>
  * The target is to render full HD video (1920x1080) at a reasonable frame rate (>25fps).
  * <p>
- * This test can render the video at a fixed size, or it can take the size from the
- * video itself.
- * <p>
- * You may need to set -Djna.library.path=[path-to-libvlc] on the command-line.
+ * This test can render the video at a fixed size, or it can take the size from the video itself.
  * <p>
  * Originally based on an example contributed by John Hendrikx.
- * <p>
- * -Dprism.verbose=true -Xmx512m -verbose:gc
  * <p>
  * This version works with JavaFX on JDK 1.8, without "wrong thread" errors.
  */
@@ -62,22 +67,6 @@ public abstract class JavaFXDirectRenderingTest extends Application {
     private static final String VIDEO_FILE = "FIXME";
 
     /**
-     * Set this to <code>true</code> to resize the display to the dimensions of the
-     * video, otherwise it will use {@link #WIDTH} and {@link #HEIGHT}.
-     */
-    private static final boolean useSourceSize = true;
-
-    /**
-     * Target width, unless {@link #useSourceSize} is set.
-     */
-    private static final int WIDTH = 720;
-
-    /**
-     * Target height, unless {@link #useSourceSize} is set.
-     */
-    private static final int HEIGHT = 576;
-
-    /**
      * Lightweight JavaFX canvas, the video is rendered here.
      */
     private final Canvas canvas;
@@ -85,7 +74,7 @@ public abstract class JavaFXDirectRenderingTest extends Application {
     /**
      * Pixel writer to update the canvas.
      */
-    private final PixelWriter pixelWriter;
+    private PixelWriter pixelWriter;
 
     /**
      * Pixel format.
@@ -98,9 +87,14 @@ public abstract class JavaFXDirectRenderingTest extends Application {
     private final BorderPane borderPane;
 
     /**
+     *
+     */
+    private final MediaPlayerFactory mediaPlayerFactory;
+
+    /**
      * The vlcj direct rendering media player component.
      */
-    private final DirectMediaPlayerComponent mediaPlayerComponent;
+    private final EmbeddedMediaPlayer mediaPlayer;
 
     /**
      *
@@ -115,16 +109,40 @@ public abstract class JavaFXDirectRenderingTest extends Application {
     /**
      *
      */
+    private WritableImage img;
+
+    /**
+     *
+     */
     public JavaFXDirectRenderingTest() {
         canvas = new Canvas();
 
         pixelWriter = canvas.getGraphicsContext2D().getPixelWriter();
         pixelFormat = PixelFormat.getByteBgraInstance();
 
+        mediaPlayerFactory = new MediaPlayerFactory();
+        mediaPlayer = mediaPlayerFactory.mediaPlayers().newEmbeddedMediaPlayer();
+
+        mediaPlayer.videoSurface().set(new JavaFxVideoSurface());
+
         borderPane = new BorderPane();
         borderPane.setCenter(canvas);
+        borderPane.setStyle("-fx-background-color: rgb(0, 0, 0);");
 
-        mediaPlayerComponent = new TestMediaPlayerComponent();
+        Button button = new Button("Show FileChooser");
+        button.setOnAction(event -> {
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.showOpenDialog(stage);
+//                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+//                alert.setTitle("Information Dialog");
+//                alert.setHeaderText("Look, an Information Dialog");
+//                alert.setContentText("I have a great message for you!");
+//
+//                alert.showAndWait();
+        });
+
+        canvas.widthProperty().bind(borderPane.widthProperty());
+        canvas.heightProperty().bind(borderPane.heightProperty());
     }
 
     @Override
@@ -133,14 +151,16 @@ public abstract class JavaFXDirectRenderingTest extends Application {
 
         stage.setTitle("vlcj JavaFX Direct Rendering Test");
 
-        scene = new Scene(borderPane);
+        scene = new Scene(borderPane, Color.BLACK);
 
         primaryStage.setScene(scene);
         primaryStage.show();
 
-        mediaPlayerComponent.getMediaPlayer().playMedia(VIDEO_FILE);
+        mediaPlayer.controls().setRepeat(true);
 
-        mediaPlayerComponent.getMediaPlayer().setPosition(0.7f);
+        mediaPlayer.media().play(VIDEO_FILE);
+
+//        mediaPlayer.controls().setPosition(0.9f);
 
         startTimer();
     }
@@ -149,70 +169,97 @@ public abstract class JavaFXDirectRenderingTest extends Application {
     public final void stop() throws Exception {
         stopTimer();
 
-        mediaPlayerComponent.getMediaPlayer().stop();
-        mediaPlayerComponent.getMediaPlayer().release();
+        mediaPlayer.controls().stop();
+        mediaPlayer.release();
+        mediaPlayerFactory.release();
     }
 
-    /**
-     * Implementation of a direct rendering media player component that renders
-     * the video to a JavaFX canvas.
-     */
-    private class TestMediaPlayerComponent extends DirectMediaPlayerComponent {
+    private class JavaFxVideoSurface extends CallbackVideoSurface {
 
-        public TestMediaPlayerComponent() {
-            super(new TestBufferFormatCallback());
+        JavaFxVideoSurface() {
+            super(new JavaFxBufferFormatCallback(), new JavaFxRenderCallback(), true, VideoSurfaceAdapters.getVideoSurfaceAdapter());
         }
+
     }
 
-    /**
-     * Callback to get the buffer format to use for video playback.
-     */
-    private class TestBufferFormatCallback implements BufferFormatCallback {
-
+    private class JavaFxBufferFormatCallback implements BufferFormatCallback {
         @Override
         public BufferFormat getBufferFormat(int sourceWidth, int sourceHeight) {
-            final int width;
-            final int height;
-            if (useSourceSize) {
-                width = sourceWidth;
-                height = sourceHeight;
-            }
-            else {
-                width = WIDTH;
-                height = HEIGHT;
-            }
+            JavaFXDirectRenderingTest.this.img = new WritableImage(sourceWidth, sourceHeight);
+            JavaFXDirectRenderingTest.this.pixelWriter = img.getPixelWriter();
+
             Platform.runLater(new Runnable () {
                 @Override
                 public void run() {
-                    canvas.setWidth(width);
-                    canvas.setHeight(height);
-                    stage.setWidth(width);
-                    stage.setHeight(height);
+                    stage.setWidth(sourceWidth);
+                    stage.setHeight(sourceHeight);
                 }
             });
-            return new RV32BufferFormat(width, height);
+            return new RV32BufferFormat(sourceWidth, sourceHeight);
         }
     }
 
-    /**
-     *
-     */
-    protected final void renderFrame() {
-        Memory[] nativeBuffers = mediaPlayerComponent.getMediaPlayer().lock();
-        if (nativeBuffers != null) {
-            // FIXME there may be more efficient ways to do this...
-            // Since this is now being called by a specific rendering time, independent of the native video callbacks being
-            // invoked, some more defensive conditional checks are needed
-            Memory nativeBuffer = nativeBuffers[0];
-            if (nativeBuffer != null) {
-                ByteBuffer byteBuffer = nativeBuffer.getByteBuffer(0, nativeBuffer.size());
-                BufferFormat bufferFormat = ((DefaultDirectMediaPlayer) mediaPlayerComponent.getMediaPlayer()).getBufferFormat();
-                if (bufferFormat.getWidth() > 0 && bufferFormat.getHeight() > 0) {
-                    pixelWriter.setPixels(0, 0, bufferFormat.getWidth(), bufferFormat.getHeight(), pixelFormat, byteBuffer, bufferFormat.getPitches()[0]);
-                }
+    // Semaphore used to prevent the pixel writer from being updated in one thread while it is being rendered by a
+    // different thread
+    private final Semaphore semaphore = new Semaphore(1);
+
+    // This is correct as far as it goes, but we need to use one of the timers to get smooth rendering (the timer is
+    // handled by the demo sub-classes)
+    private class JavaFxRenderCallback implements RenderCallback {
+        @Override
+        public void display(MediaPlayer mediaPlayer, ByteBuffer[] nativeBuffers, BufferFormat bufferFormat) {
+            try {
+                semaphore.acquire();
+                pixelWriter.setPixels(0, 0, bufferFormat.getWidth(), bufferFormat.getHeight(), pixelFormat, nativeBuffers[0], bufferFormat.getPitches()[0]);
+                semaphore.release();
+            }
+            catch (InterruptedException e) {
             }
         }
-        mediaPlayerComponent.getMediaPlayer().unlock();
+    }
+
+    protected final void renderFrame() {
+        GraphicsContext g = canvas.getGraphicsContext2D();
+
+        double width = canvas.getWidth();
+        double height = canvas.getHeight();
+
+        g.setFill(new Color(0, 0, 0, 1));
+        g.fillRect(0, 0, width, height);
+
+        if (img != null) {
+            double imageWidth = img.getWidth();
+            double imageHeight = img.getHeight();
+
+            double sx = width / imageWidth;
+            double sy = height / imageHeight;
+
+            double sf = Math.min(sx, sy);
+
+            double scaledW = imageWidth * sf;
+            double scaledH = imageHeight * sf;
+
+            Affine ax = g.getTransform();
+
+            g.translate(
+                (width - scaledW) / 2,
+                (height - scaledH) / 2
+            );
+
+            if (sf != 1.0) {
+                g.scale(sf, sf);
+            }
+
+            try {
+                semaphore.acquire();
+                g.drawImage(img, 0, 0);
+                semaphore.release();
+            }
+            catch (InterruptedException e) {
+            }
+
+            g.setTransform(ax);
+        }
     }
 
     /**
