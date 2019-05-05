@@ -25,7 +25,7 @@ import java.nio.ByteBuffer;
 
 public class JavaFXExample extends Application {
 
-    private static final String PATH_TO_VIDEO = "/media/linus/60C78DDD3E5786A3/Anime/The Disastrous Life of Saiki K./Staffel 2/Episoden/[Davinci] Saiki Kusuo no Psi-nan 2 - 01v2 [720p][69539A2C].mkv";
+    private static final String PATH_TO_VIDEO = "CHANGE ME";
 
     private ImageView imageView;
     private EmbeddedMediaPlayer mediaPlayerComponent;
