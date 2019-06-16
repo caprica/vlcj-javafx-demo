@@ -17,6 +17,16 @@ All examples work acceptably.
 
 The AnimationTimer is the simplest to implement.
 
+JavaFX PixelBuffer
+------------------
+
+If you want to try the new experimental PixelBuffer being proposed for JavaFX, please switch to:
+
+ * [pixelbuffer-test](https://github.com/caprica/vlcj-javafx/tree/pixelbuffer-test)
+
+With the PixelBuffer the native video buffer is directly shared with JavaFX thereby avoiding a full-frame
+copy for each video frame.
+
 Getting Started
 ---------------
 
