@@ -24,12 +24,13 @@ import java.util.concurrent.Semaphore;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
+import javafx.scene.image.PixelBuffer;
 import javafx.scene.image.PixelFormat;
-import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import javafx.scene.image.WritablePixelFormat;
 import javafx.scene.layout.BorderPane;
@@ -48,6 +49,12 @@ import uk.co.caprica.vlcj.player.embedded.videosurface.callback.BufferFormatCall
 import uk.co.caprica.vlcj.player.embedded.videosurface.callback.RenderCallback;
 import uk.co.caprica.vlcj.player.embedded.videosurface.callback.format.RV32BufferFormat;
 
+// README IMPORTANT
+//
+// This class is a hacked-up version of the original JavaFX vlcj demo class with changes to use the new experimental
+// pixel buffer - the implementation may still not be optimal and may not use best practice for the pixel buffer, but
+// this was knocked together quickly with minimal changes from the original pixel writer version
+
 /**
  * Example showing how to render video to a JavaFX Canvas component.
  * <p>
@@ -64,7 +71,7 @@ public abstract class JavaFXDirectRenderingTest extends Application {
     /**
      * Filename of the video to play.
      */
-    private static final String VIDEO_FILE = "FIXME";
+    private static final String VIDEO_FILE = "/home/mark/sekiro.mp4";
 
     /**
      * Lightweight JavaFX canvas, the video is rendered here.
@@ -72,9 +79,9 @@ public abstract class JavaFXDirectRenderingTest extends Application {
     private final Canvas canvas;
 
     /**
-     * Pixel writer to update the canvas.
+     *
      */
-    private PixelWriter pixelWriter;
+    private PixelBuffer pixelBuffer;
 
     /**
      * Pixel format.
@@ -106,10 +113,16 @@ public abstract class JavaFXDirectRenderingTest extends Application {
      */
     private Scene scene;
 
+    private int bufferWidth;
+
+    private int bufferHeight;
+
     /**
      *
      */
     private WritableImage img;
+
+    private JavaFxVideoSurface videoSurface;
 
     /**
      *
@@ -117,13 +130,13 @@ public abstract class JavaFXDirectRenderingTest extends Application {
     public JavaFXDirectRenderingTest() {
         canvas = new Canvas();
 
-        pixelWriter = canvas.getGraphicsContext2D().getPixelWriter();
-        pixelFormat = PixelFormat.getByteBgraInstance();
+        pixelFormat = PixelFormat.getByteBgraPreInstance();
 
         mediaPlayerFactory = new MediaPlayerFactory();
         mediaPlayer = mediaPlayerFactory.mediaPlayers().newEmbeddedMediaPlayer();
 
-        mediaPlayer.videoSurface().set(new JavaFxVideoSurface());
+        videoSurface = new JavaFxVideoSurface();
+        mediaPlayer.videoSurface().set(videoSurface);
 
         borderPane = new BorderPane();
         borderPane.setCenter(canvas);
@@ -149,7 +162,7 @@ public abstract class JavaFXDirectRenderingTest extends Application {
     public final void start(Stage primaryStage) throws Exception {
         this.stage = primaryStage;
 
-        stage.setTitle("vlcj JavaFX Direct Rendering Test");
+        stage.setTitle("vlcj JavaFX PixelBuffer test");
 
         scene = new Scene(borderPane, Color.BLACK);
 
@@ -185,36 +198,35 @@ public abstract class JavaFXDirectRenderingTest extends Application {
     private class JavaFxBufferFormatCallback implements BufferFormatCallback {
         @Override
         public BufferFormat getBufferFormat(int sourceWidth, int sourceHeight) {
-            JavaFXDirectRenderingTest.this.img = new WritableImage(sourceWidth, sourceHeight);
-            JavaFXDirectRenderingTest.this.pixelWriter = img.getPixelWriter();
+            bufferWidth = sourceWidth;
+            bufferHeight = sourceHeight;
 
-            Platform.runLater(new Runnable () {
-                @Override
-                public void run() {
-                    stage.setWidth(sourceWidth);
-                    stage.setHeight(sourceHeight);
-                }
+            Platform.runLater(() -> {
+                stage.setWidth(sourceWidth);
+                stage.setHeight(sourceHeight);
             });
             return new RV32BufferFormat(sourceWidth, sourceHeight);
         }
     }
 
-    // Semaphore used to prevent the pixel writer from being updated in one thread while it is being rendered by a
-    // different thread
-    private final Semaphore semaphore = new Semaphore(1);
+    // FIXME not sure if we need to protect a repaint while a buffer update is in progress
+    // FIXME might be a good to idea in the video surface to invoke some function when setup is called, so we know the buffers are ready
 
     // This is correct as far as it goes, but we need to use one of the timers to get smooth rendering (the timer is
     // handled by the demo sub-classes)
     private class JavaFxRenderCallback implements RenderCallback {
         @Override
         public void display(MediaPlayer mediaPlayer, ByteBuffer[] nativeBuffers, BufferFormat bufferFormat) {
-            try {
-                semaphore.acquire();
-                pixelWriter.setPixels(0, 0, bufferFormat.getWidth(), bufferFormat.getHeight(), pixelFormat, nativeBuffers[0], bufferFormat.getPitches()[0]);
-                semaphore.release();
+            // FIXME ideally this would not be done in each display, see above FIXME about setup method from video surface
+            if (pixelBuffer == null) {
+                // This is the new magic sauce, the native video buffer is used directly for the image buffer - there is
+                // no full-frame buffer copy here
+                pixelBuffer = new PixelBuffer(bufferWidth, bufferHeight, videoSurface.getNativeBuffers()[0], pixelFormat);
+                img = new WritableImage(pixelBuffer);
             }
-            catch (InterruptedException e) {
-            }
+
+            // We only need to tell the pixel buffer which pixels were updated (in this case all of them)
+            Platform.runLater(() -> pixelBuffer.updateBuffer(pixBuf -> new Rectangle2D(0, 0, img.getWidth(), img.getHeight())));
         }
     }
 
@@ -250,13 +262,7 @@ public abstract class JavaFXDirectRenderingTest extends Application {
                 g.scale(sf, sf);
             }
 
-            try {
-                semaphore.acquire();
-                g.drawImage(img, 0, 0);
-                semaphore.release();
-            }
-            catch (InterruptedException e) {
-            }
+            g.drawImage(img, 0, 0);
 
             g.setTransform(ax);
         }
