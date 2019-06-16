@@ -24,7 +24,7 @@ This project will not work immediately when you clone it, you will need to do so
 The main class is `JavaFxLauncher` which is a simple wrapper around the main `Application` class for
 uninteresting Java Module System avoidance reasons.
 
-![demo](https://github.com/caprica/vlcj-javafx/raw/master/doc/vlcj-javafx-pixelbuffer.png "demo")
+![demo](https://github.com/caprica/vlcj-javafx/blob/pixelbuffer-test/doc/vlcj-javafx-pixelbuffer.png?raw=true "demo")
 
 Caveats
 -------
