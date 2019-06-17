@@ -19,16 +19,12 @@
 
 package uk.co.caprica.vlcj.javafx.test;
 
-import java.nio.ByteBuffer;
-import java.util.concurrent.Semaphore;
-
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.Button;
 import javafx.scene.image.PixelBuffer;
 import javafx.scene.image.PixelFormat;
 import javafx.scene.image.WritableImage;
@@ -36,11 +32,10 @@ import javafx.scene.image.WritablePixelFormat;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.scene.transform.Affine;
-import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-
 import uk.co.caprica.vlcj.factory.MediaPlayerFactory;
 import uk.co.caprica.vlcj.player.base.MediaPlayer;
+import uk.co.caprica.vlcj.player.base.MediaPlayerEventAdapter;
 import uk.co.caprica.vlcj.player.embedded.EmbeddedMediaPlayer;
 import uk.co.caprica.vlcj.player.embedded.videosurface.CallbackVideoSurface;
 import uk.co.caprica.vlcj.player.embedded.videosurface.VideoSurfaceAdapters;
@@ -49,11 +44,23 @@ import uk.co.caprica.vlcj.player.embedded.videosurface.callback.BufferFormatCall
 import uk.co.caprica.vlcj.player.embedded.videosurface.callback.RenderCallback;
 import uk.co.caprica.vlcj.player.embedded.videosurface.callback.format.RV32BufferFormat;
 
+import java.nio.ByteBuffer;
+
 // README IMPORTANT
 //
 // This class is a hacked-up version of the original JavaFX vlcj demo class with changes to use the new experimental
-// pixel buffer - the implementation may still not be optimal and may not use best practice for the pixel buffer, but
-// this was knocked together quickly with minimal changes from the original pixel writer version
+// JavaFX PixelBuffer - the implementation may still not be optimal and may not use best practice for the pixel buffer,
+// but this was knocked together quickly with minimal changes from the original pixel writer version
+//
+// Some things to be considered:
+//
+//  1. There is no synchronisation - nothing prevents the buffer from being rendered while it is being updated by the
+//     native thread, although in practice this seems to cause no apparent problem
+//  2. The timer should ideally be paused (and later resumed) when playback is paused, stopped, finished or in error,
+//     and also when the application is minimised etc
+//  3. It does not seem to make much difference whether the buffer is marked as updated in the native display callback,
+//     or if you wait until the renderFrame() method (so this is native thread vs timer implementation) - both
+//     approaches work with minimal performance differences
 
 /**
  * Example showing how to render video to a JavaFX Canvas component.
@@ -63,6 +70,10 @@ import uk.co.caprica.vlcj.player.embedded.videosurface.callback.format.RV32Buffe
  * This test can render the video at a fixed size, or it can take the size from the video itself.
  * <p>
  * Originally based on an example contributed by John Hendrikx.
+ * <p>
+ * This version takes a different approach to video scaling - the video is always rendered at its native size, but the
+ * graphics context itself is scaled to resize the video, a similar implementation to how the equivalent Swing version
+ * now works.
  * <p>
  * This version works with JavaFX on JDK 1.8, without "wrong thread" errors.
  */
@@ -77,11 +88,6 @@ public abstract class JavaFXDirectRenderingTest extends Application {
      * Lightweight JavaFX canvas, the video is rendered here.
      */
     private final Canvas canvas;
-
-    /**
-     *
-     */
-    private PixelBuffer pixelBuffer;
 
     /**
      * Pixel format.
@@ -120,9 +126,11 @@ public abstract class JavaFXDirectRenderingTest extends Application {
     /**
      *
      */
+    private PixelBuffer pixelBuffer;
+
     private WritableImage img;
 
-    private JavaFxVideoSurface videoSurface;
+    private Rectangle2D updatedBuffer;
 
     /**
      *
@@ -135,23 +143,42 @@ public abstract class JavaFXDirectRenderingTest extends Application {
         mediaPlayerFactory = new MediaPlayerFactory();
         mediaPlayer = mediaPlayerFactory.mediaPlayers().newEmbeddedMediaPlayer();
 
-        videoSurface = new JavaFxVideoSurface();
-        mediaPlayer.videoSurface().set(videoSurface);
+        mediaPlayer.events().addMediaPlayerEventListener(new MediaPlayerEventAdapter() {
+            @Override
+            public void playing(MediaPlayer mediaPlayer) {
+                startTimer();
+            }
+
+            @Override
+            public void paused(MediaPlayer mediaPlayer) {
+                stopTimer();
+//                pauseTimer();
+            }
+
+            @Override
+            public void stopped(MediaPlayer mediaPlayer) {
+                stopTimer();
+            }
+
+            @Override
+            public void finished(MediaPlayer mediaPlayer) {
+                stopTimer();
+            }
+
+            @Override
+            public void error(MediaPlayer mediaPlayer) {
+                stopTimer();
+            }
+        });
+
+        mediaPlayer.videoSurface().set(new JavaFxVideoSurface());
 
         borderPane = new BorderPane();
         borderPane.setCenter(canvas);
         borderPane.setStyle("-fx-background-color: rgb(0, 0, 0);");
 
-        Button button = new Button("Show FileChooser");
-        button.setOnAction(event -> {
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.showOpenDialog(stage);
-//                Alert alert = new Alert(Alert.AlertType.INFORMATION);
-//                alert.setTitle("Information Dialog");
-//                alert.setHeaderText("Look, an Information Dialog");
-//                alert.setContentText("I have a great message for you!");
-//
-//                alert.showAndWait();
+        canvas.setOnMouseClicked(event -> {
+            mediaPlayer.controls().pause();
         });
 
         canvas.widthProperty().bind(borderPane.widthProperty());
@@ -172,10 +199,6 @@ public abstract class JavaFXDirectRenderingTest extends Application {
         mediaPlayer.controls().setRepeat(true);
 
         mediaPlayer.media().play(VIDEO_FILE);
-
-//        mediaPlayer.controls().setPosition(0.9f);
-
-        startTimer();
     }
 
     @Override
@@ -202,40 +225,54 @@ public abstract class JavaFXDirectRenderingTest extends Application {
             bufferHeight = sourceHeight;
 
             Platform.runLater(() -> {
-                stage.setWidth(sourceWidth);
-                stage.setHeight(sourceHeight);
+                // The stage size doesn't really matter, it's the buffer size that's important
+//                stage.setWidth(sourceWidth);
+//                stage.setHeight(sourceHeight);
+
+                // This does not need to be done here, but you could set the video surface size to match the native
+                // video size here
+                stage.setWidth(960);
+                stage.setHeight(540);
             });
             return new RV32BufferFormat(sourceWidth, sourceHeight);
         }
-    }
 
-    // FIXME not sure if we need to protect a repaint while a buffer update is in progress
-    // FIXME might be a good to idea in the video surface to invoke some function when setup is called, so we know the buffers are ready
+        @Override
+        public void allocatedBuffers(ByteBuffer[] buffers) {
+            // This is the new magic sauce, the native video buffer is used directly for the image buffer - there is no
+            // full-frame buffer copy here
+            pixelBuffer = new PixelBuffer(bufferWidth, bufferHeight, buffers[0], pixelFormat);
+            img = new WritableImage(pixelBuffer);
+            // Since for every frame the entire buffer will be updated, we can optimise by caching the result here
+            updatedBuffer = new Rectangle2D(0, 0, bufferWidth, bufferHeight);
+        }
+
+    }
 
     // This is correct as far as it goes, but we need to use one of the timers to get smooth rendering (the timer is
     // handled by the demo sub-classes)
     private class JavaFxRenderCallback implements RenderCallback {
         @Override
         public void display(MediaPlayer mediaPlayer, ByteBuffer[] nativeBuffers, BufferFormat bufferFormat) {
-            // FIXME ideally this would not be done in each display, see above FIXME about setup method from video surface
-            if (pixelBuffer == null) {
-                // This is the new magic sauce, the native video buffer is used directly for the image buffer - there is
-                // no full-frame buffer copy here
-                pixelBuffer = new PixelBuffer(bufferWidth, bufferHeight, videoSurface.getNativeBuffers()[0], pixelFormat);
-                img = new WritableImage(pixelBuffer);
-            }
-
-            // We only need to tell the pixel buffer which pixels were updated (in this case all of them)
-            Platform.runLater(() -> pixelBuffer.updateBuffer(pixBuf -> new Rectangle2D(0, 0, img.getWidth(), img.getHeight())));
+            // We only need to tell the pixel buffer which pixels were updated (in this case all of them) - the
+            // pre-cached value is used
+            Platform.runLater(() -> pixelBuffer.updateBuffer(pixBuf -> updatedBuffer));
         }
     }
 
+    /**
+     * This method is called for each tick of whatever timer implementation has been chosen..
+     * <p>
+     * Needless to say, this method should run as quickly as possible.
+     */
     protected final void renderFrame() {
         GraphicsContext g = canvas.getGraphicsContext2D();
 
         double width = canvas.getWidth();
         double height = canvas.getHeight();
 
+        // The frame must always be filled with background colour first since the rendered image may actually be smaller
+        // than the full canvas - otherwise we will end up with garbage in the borders
         g.setFill(new Color(0, 0, 0, 1));
         g.fillRect(0, 0, width, height);
 
@@ -261,6 +298,9 @@ public abstract class JavaFXDirectRenderingTest extends Application {
             if (sf != 1.0) {
                 g.scale(sf, sf);
             }
+
+            // You can do this here if you want, instead of the display() callback, doesn't seem to make much difference
+//            pixelBuffer.updateBuffer(pixBuf -> updatedBuffer);
 
             g.drawImage(img, 0, 0);
 
