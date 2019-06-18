@@ -25,11 +25,13 @@ import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.Label;
 import javafx.scene.image.PixelBuffer;
 import javafx.scene.image.PixelFormat;
 import javafx.scene.image.WritableImage;
 import javafx.scene.image.WritablePixelFormat;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.transform.Affine;
 import javafx.stage.Stage;
@@ -46,6 +48,8 @@ import uk.co.caprica.vlcj.player.embedded.videosurface.callback.format.RV32Buffe
 
 import java.nio.ByteBuffer;
 
+import static uk.co.caprica.vlcj.javafx.test.MenuBuilder.createMenu;
+
 // README IMPORTANT
 //
 // This class is a hacked-up version of the original JavaFX vlcj demo class with changes to use the new experimental
@@ -61,6 +65,7 @@ import java.nio.ByteBuffer;
 //  3. It does not seem to make much difference whether the buffer is marked as updated in the native display callback,
 //     or if you wait until the renderFrame() method (so this is native thread vs timer implementation) - both
 //     approaches work with minimal performance differences
+//  4. Need fullscreen solution for vlcj+JavaFX
 
 /**
  * Example showing how to render video to a JavaFX Canvas component.
@@ -79,10 +84,14 @@ import java.nio.ByteBuffer;
  */
 public abstract class JavaFXDirectRenderingTest extends Application {
 
+    private static final String BLACK_BACKGROUND_STYLE = "-fx-background-color: rgb(0, 0, 0);";
+
+    private static final String STATUS_BACKGROUND_STYLE = "-fx-background-color: rgb(232, 232, 232); -fx-label-padding: 8 8 8 8;";
+
     /**
      * Filename of the video to play.
      */
-    private static final String VIDEO_FILE = "/home/mark/sekiro.mp4";
+    private static final String VIDEO_FILE = "YOUR VIDEO FILE HERE";
 
     /**
      * Lightweight JavaFX canvas, the video is rendered here.
@@ -136,8 +145,6 @@ public abstract class JavaFXDirectRenderingTest extends Application {
      *
      */
     public JavaFXDirectRenderingTest() {
-        canvas = new Canvas();
-
         pixelFormat = PixelFormat.getByteBgraPreInstance();
 
         mediaPlayerFactory = new MediaPlayerFactory();
@@ -174,15 +181,34 @@ public abstract class JavaFXDirectRenderingTest extends Application {
         mediaPlayer.videoSurface().set(new JavaFxVideoSurface());
 
         borderPane = new BorderPane();
-        borderPane.setCenter(canvas);
-        borderPane.setStyle("-fx-background-color: rgb(0, 0, 0);");
+        borderPane.setStyle(BLACK_BACKGROUND_STYLE);
+
+        canvas = new Canvas();
+        canvas.setStyle(BLACK_BACKGROUND_STYLE);
+
+        Pane canvasPane = new Pane();
+        canvasPane.setStyle(BLACK_BACKGROUND_STYLE);
+        canvasPane.getChildren().add(canvas);
+
+        canvas.widthProperty().bind(canvasPane.widthProperty());
+        canvas.heightProperty().bind(canvasPane.heightProperty());
+
+        borderPane.setCenter(canvasPane);
+
+        Pane statusPane = new Pane();
+        statusPane.setStyle(STATUS_BACKGROUND_STYLE);
+
+        Label statusLabel = new Label("vlcj-javafx with PixelBuffer is ready for awesome");
+        statusLabel.setStyle(STATUS_BACKGROUND_STYLE);
+        statusPane.getChildren().add(statusLabel);
+
+        borderPane.setBottom(statusPane);
+
+        borderPane.setTop(createMenu());
 
         canvas.setOnMouseClicked(event -> {
             mediaPlayer.controls().pause();
         });
-
-        canvas.widthProperty().bind(borderPane.widthProperty());
-        canvas.heightProperty().bind(borderPane.heightProperty());
     }
 
     @Override
@@ -231,8 +257,8 @@ public abstract class JavaFXDirectRenderingTest extends Application {
 
                 // This does not need to be done here, but you could set the video surface size to match the native
                 // video size here
-                stage.setWidth(960);
-                stage.setHeight(540);
+                stage.setWidth(900);
+                stage.setHeight(600);
             });
             return new RV32BufferFormat(sourceWidth, sourceHeight);
         }
@@ -271,8 +297,8 @@ public abstract class JavaFXDirectRenderingTest extends Application {
         double width = canvas.getWidth();
         double height = canvas.getHeight();
 
-        // The frame must always be filled with background colour first since the rendered image may actually be smaller
-        // than the full canvas - otherwise we will end up with garbage in the borders
+        // The canvas must always be filled with background colour first since the rendered image may actually be
+        // smaller than the full canvas - otherwise we will end up with garbage in the borders on resize
         g.setFill(new Color(0, 0, 0, 1));
         g.fillRect(0, 0, width, height);
 
