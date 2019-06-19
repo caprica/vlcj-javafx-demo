@@ -204,11 +204,10 @@ public abstract class JavaFXDirectRenderingTest extends Application {
 
         borderPane.setBottom(statusPane);
 
-        borderPane.setTop(createMenu());
+        ControlsPane cp = new ControlsPane(mediaPlayer);
+        borderPane.setBottom(cp);
 
-        canvas.setOnMouseClicked(event -> {
-            mediaPlayer.controls().pause();
-        });
+        borderPane.setTop(createMenu());
     }
 
     @Override
