@@ -33,6 +33,7 @@ import javafx.scene.image.WritablePixelFormat;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 import javafx.scene.transform.Affine;
 import javafx.stage.Stage;
 import uk.co.caprica.vlcj.factory.MediaPlayerFactory;
@@ -66,6 +67,7 @@ import static uk.co.caprica.vlcj.javafx.test.MenuBuilder.createMenu;
 //     or if you wait until the renderFrame() method (so this is native thread vs timer implementation) - both
 //     approaches work with minimal performance differences
 //  4. Need fullscreen solution for vlcj+JavaFX
+//  5. Timer could be stopped/paused/restarted when video stops/pauses/restarts
 
 /**
  * Example showing how to render video to a JavaFX Canvas component.
@@ -87,6 +89,10 @@ public abstract class JavaFXDirectRenderingTest extends Application {
     private static final String BLACK_BACKGROUND_STYLE = "-fx-background-color: rgb(0, 0, 0);";
 
     private static final String STATUS_BACKGROUND_STYLE = "-fx-background-color: rgb(232, 232, 232); -fx-label-padding: 8 8 8 8;";
+
+    private static final Color BLACK = new Color(0, 0, 0,1);
+    private static final Color WHITE = new Color(1,1,1,1);
+    private static final Font FONT = Font.font("Monospace", 40);
 
     /**
      * Filename of the video to play.
@@ -141,6 +147,11 @@ public abstract class JavaFXDirectRenderingTest extends Application {
 
     private Rectangle2D updatedBuffer;
 
+    private long start;
+    private long frames;
+    private long maxFrameTime;
+    private long totalFrameTime;
+
     /**
      *
      */
@@ -153,28 +164,28 @@ public abstract class JavaFXDirectRenderingTest extends Application {
         mediaPlayer.events().addMediaPlayerEventListener(new MediaPlayerEventAdapter() {
             @Override
             public void playing(MediaPlayer mediaPlayer) {
-                startTimer();
+//                startTimer();
             }
 
             @Override
             public void paused(MediaPlayer mediaPlayer) {
-                stopTimer();
+//                stopTimer();
 //                pauseTimer();
             }
 
             @Override
             public void stopped(MediaPlayer mediaPlayer) {
-                stopTimer();
+//                stopTimer();
             }
 
             @Override
             public void finished(MediaPlayer mediaPlayer) {
-                stopTimer();
+//                stopTimer();
             }
 
             @Override
             public void error(MediaPlayer mediaPlayer) {
-                stopTimer();
+//                stopTimer();
             }
         });
 
@@ -224,6 +235,8 @@ public abstract class JavaFXDirectRenderingTest extends Application {
         mediaPlayer.controls().setRepeat(true);
 
         mediaPlayer.media().play(VIDEO_FILE);
+
+        startTimer();
     }
 
     @Override
@@ -270,6 +283,9 @@ public abstract class JavaFXDirectRenderingTest extends Application {
             img = new WritableImage(pixelBuffer);
             // Since for every frame the entire buffer will be updated, we can optimise by caching the result here
             updatedBuffer = new Rectangle2D(0, 0, bufferWidth, bufferHeight);
+
+            start = System.currentTimeMillis();
+            frames = 0;
         }
 
     }
@@ -291,6 +307,10 @@ public abstract class JavaFXDirectRenderingTest extends Application {
      * Needless to say, this method should run as quickly as possible.
      */
     protected final void renderFrame() {
+        frames++;
+
+        long renderStart = System.currentTimeMillis();
+
         GraphicsContext g = canvas.getGraphicsContext2D();
 
         double width = canvas.getWidth();
@@ -329,8 +349,40 @@ public abstract class JavaFXDirectRenderingTest extends Application {
 
             g.drawImage(img, 0, 0);
 
+            long now = System.currentTimeMillis();
+            double fps = (double) 1000 * frames / (now - start);
+            double meanFrameTime = totalFrameTime / (double) frames;
+
+            String val = String.format(
+                " Frames: %d\n" +
+                "Seconds: %d\n" +
+                "    FPS: %01.1f\n" +
+                "Maximum: %d ms\n" +
+                "   Mean: %01.3f ms",
+                frames, (now - start) / 1000, fps, maxFrameTime, meanFrameTime
+            );
+
+            renderText(g, val, 100, 200);
+
             g.setTransform(ax);
         }
+
+        long renderTime = System.currentTimeMillis() - renderStart;
+
+        maxFrameTime = Math.max(maxFrameTime, renderTime);
+
+        totalFrameTime += renderTime;
+    }
+
+    private void renderText(GraphicsContext g, String text, double x, double y) {
+        g.setFont(FONT);
+        g.setFill(BLACK);
+        g.fillText(text, x - 1, y - 1);
+        g.fillText(text, x + 1, y - 1);
+        g.fillText(text, x - 1, y + 1);
+        g.fillText(text, x + 1, y + 1);
+        g.setFill(WHITE);
+        g.fillText(text, x, y);
     }
 
     /**
