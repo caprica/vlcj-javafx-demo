@@ -286,6 +286,8 @@ public abstract class JavaFXDirectRenderingTest extends Application {
 
             start = System.currentTimeMillis();
             frames = 0;
+            maxFrameTime = 0;
+            totalFrameTime = 0;
         }
 
     }
