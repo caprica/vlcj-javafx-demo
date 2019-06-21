@@ -26,6 +26,7 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.input.KeyCombination;
 import javafx.stage.FileChooser;
+import uk.co.caprica.vlcj.player.base.MediaPlayer;
 
 import java.io.File;
 
@@ -42,6 +43,8 @@ final class MenuBuilder {
      * @return menu
      */
     static MenuBar createMenu(JavaFXDirectRenderingTest application) {
+        MediaPlayer mediaPlayer = application.mediaPlayer();
+
         MenuBar menuBar = new MenuBar();
 
         Menu mediaMenu = new Menu("_Media");
@@ -64,34 +67,69 @@ final class MenuBuilder {
         Menu playbackMenu = new Menu("P_layback");
         mediaMenu.setMnemonicParsing(true);
 
+        MenuItem playbackJumpForwardMenuItem = new MenuItem("_Jump Forward");
+        playbackJumpForwardMenuItem.setMnemonicParsing(true);
+        playbackJumpForwardMenuItem.setAccelerator(KeyCombination.keyCombination("Ctrl+Right"));
+
+        MenuItem playbackJumpBackwardMenuItem = new MenuItem("Jump Bac_kward");
+        playbackJumpBackwardMenuItem.setMnemonicParsing(true);
+        playbackJumpBackwardMenuItem.setAccelerator(KeyCombination.keyCombination("Ctrl+Left"));
+
         MenuItem playbackPlayMenuItem = new MenuItem("_Play");
         playbackPlayMenuItem.setMnemonicParsing(true);
-        playbackMenu.getItems().add(playbackPlayMenuItem);
+
+        MenuItem playbackPauseMenuItem = new MenuItem("Pa_use");
+        playbackPauseMenuItem.setMnemonicParsing(true);
 
         MenuItem playbackStopMenuItem = new MenuItem("_Stop");
         playbackStopMenuItem.setMnemonicParsing(true);
+
+        playbackMenu.getItems().add(playbackJumpForwardMenuItem);
+        playbackMenu.getItems().add(playbackJumpBackwardMenuItem);
+        playbackMenu.getItems().add(new SeparatorMenuItem());
+        playbackMenu.getItems().add(playbackPlayMenuItem);
+        playbackMenu.getItems().add(playbackPauseMenuItem);
         playbackMenu.getItems().add(playbackStopMenuItem);
 
         menuBar.getMenus().add(playbackMenu);
+
+        Menu audioMenu = new Menu("_Audio");
+        audioMenu.setMnemonicParsing(true);
+
+        CheckMenuItem audioMuteMenuItem = new CheckMenuItem("_Mute");
+        audioMuteMenuItem.setAccelerator(KeyCombination.keyCombination("Ctrl+M"));
+        audioMuteMenuItem.setMnemonicParsing(true);
+        // Mute is a bit tricksy, sadly
+
+        audioMenu.getItems().add(audioMuteMenuItem);
+
+//        menuBar.getMenus().add(audioMenu);
 
         Menu viewMenu = new Menu("V_iew");
         viewMenu.setMnemonicParsing(true);
 
         CheckMenuItem viewAlwaysOnTopMenuItem = new CheckMenuItem("Always on _top");
         viewAlwaysOnTopMenuItem.setMnemonicParsing(true);
-        viewMenu.getItems().add(viewAlwaysOnTopMenuItem);
-
-        viewMenu.getItems().add(new SeparatorMenuItem());
 
         CheckMenuItem viewMinimalInterfaceMenuItem = new CheckMenuItem("Mi_nimal Interface");
         viewMinimalInterfaceMenuItem.setMnemonicParsing(true);
         viewMinimalInterfaceMenuItem.setAccelerator(KeyCombination.keyCombination("Ctrl+H"));
-        viewMenu.getItems().add(viewMinimalInterfaceMenuItem);
 
         MenuItem viewFullScreenMenuItem = new MenuItem("_Fullscreen Interface");
         viewFullScreenMenuItem.setMnemonicParsing(true);
         viewFullScreenMenuItem.setAccelerator(KeyCombination.keyCombination("F11"));
+
+        CheckMenuItem viewStatsOverlayMenuItem = new CheckMenuItem("_Statistics Overlay");
+        viewStatsOverlayMenuItem.setMnemonicParsing(true);
+        viewStatsOverlayMenuItem.setAccelerator(KeyCombination.keyCombination("Ctrl+S"));
+        viewStatsOverlayMenuItem.setSelected(true);
+
+        viewMenu.getItems().add(viewAlwaysOnTopMenuItem);
+        viewMenu.getItems().add(new SeparatorMenuItem());
+        viewMenu.getItems().add(viewMinimalInterfaceMenuItem);
         viewMenu.getItems().add(viewFullScreenMenuItem);
+        viewMenu.getItems().add(new SeparatorMenuItem());
+        viewMenu.getItems().add(viewStatsOverlayMenuItem);
 
         menuBar.getMenus().add(viewMenu);
 
@@ -105,11 +143,21 @@ final class MenuBuilder {
 
         menuBar.getMenus().add(helpMenu);
 
+        mediaQuitMenuItem.setOnAction(actionEvent -> System.exit(0));
         mediaOpenFileMenuItem.setOnAction(actionEvent -> application.openFile());
+
+        playbackJumpForwardMenuItem.setOnAction(actionEvent -> mediaPlayer.controls().skipTime(10000));
+        playbackJumpBackwardMenuItem.setOnAction(actionEvent -> mediaPlayer.controls().skipTime(-10000));
+        playbackPlayMenuItem.setOnAction(actionEvent -> mediaPlayer.controls().play());
+        playbackPauseMenuItem.setOnAction(actionEvent -> mediaPlayer.controls().setPause(true));
+        playbackStopMenuItem.setOnAction(actionEvent -> mediaPlayer.controls().stop());
+
+        audioMuteMenuItem.setOnAction(actionEvent -> mediaPlayer.audio().setMute(audioMuteMenuItem.isSelected()));
 
         viewAlwaysOnTopMenuItem.setOnAction(actionEvent -> application.toggleAlwaysOnTop());
         viewMinimalInterfaceMenuItem.setOnAction(actionEvent -> application.toggleMinimalInterface(!viewMinimalInterfaceMenuItem.isSelected()));
         viewFullScreenMenuItem.setOnAction(actionEvent -> application.toggleFullScreen());
+        viewStatsOverlayMenuItem.setOnAction(actionEvent -> application.toggleStatsOverlay(viewStatsOverlayMenuItem.isSelected()));
 
         return menuBar;
     }

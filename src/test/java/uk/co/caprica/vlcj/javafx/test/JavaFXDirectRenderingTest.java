@@ -151,12 +151,12 @@ public abstract class JavaFXDirectRenderingTest extends Application {
 
     private Rectangle2D updatedBuffer;
 
+    private boolean showStats = true;
+
     private long start;
     private long frames;
     private long maxFrameTime;
     private long totalFrameTime;
-
-    private final Semaphore timerSemaphore = new Semaphore(1);
 
     /**
      *
@@ -347,16 +347,18 @@ public abstract class JavaFXDirectRenderingTest extends Application {
             double fps = (double) 1000 * frames / (now - start);
             double meanFrameTime = totalFrameTime / (double) frames;
 
-            String val = String.format(
-                " Frames: %d\n" +
-                "Seconds: %d\n" +
-                "    FPS: %01.1f\n" +
-                "Maximum: %d ms\n" +
-                "   Mean: %01.3f ms",
-                frames, (now - start) / 1000, fps, maxFrameTime, meanFrameTime
-            );
+            if (showStats) {
+                String val = String.format(
+                    " Frames: %d\n" +
+                    "Seconds: %d\n" +
+                    "    FPS: %01.1f\n" +
+                    "Maximum: %d ms\n" +
+                    "   Mean: %01.3f ms",
+                    frames, (now - start) / 1000, fps, maxFrameTime, meanFrameTime
+                );
 
-            renderText(g, val, 100, 200);
+                renderText(g, val, 100, 200);
+            }
 
             g.setTransform(ax);
         }
@@ -418,6 +420,14 @@ public abstract class JavaFXDirectRenderingTest extends Application {
 
     void toggleFullScreen() {
         stage.setFullScreen(!stage.isFullScreen());
+    }
+
+    void toggleStatsOverlay(boolean show) {
+        showStats = show;
+    }
+
+    MediaPlayer mediaPlayer() {
+        return mediaPlayer;
     }
 
     /**
