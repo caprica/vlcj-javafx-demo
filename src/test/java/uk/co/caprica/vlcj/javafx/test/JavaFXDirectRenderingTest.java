@@ -48,6 +48,7 @@ import uk.co.caprica.vlcj.player.embedded.videosurface.callback.RenderCallback;
 import uk.co.caprica.vlcj.player.embedded.videosurface.callback.format.RV32BufferFormat;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.Semaphore;
 
 import static uk.co.caprica.vlcj.javafx.test.MenuBuilder.createMenu;
 
@@ -97,7 +98,7 @@ public abstract class JavaFXDirectRenderingTest extends Application {
     /**
      * Filename of the video to play.
      */
-    private static final String VIDEO_FILE = "YOUR VIDEO FILE HERE";
+    private static final String VIDEO_FILE = "YOUR VIDEO HERE";
 
     /**
      * Lightweight JavaFX canvas, the video is rendered here.
@@ -152,6 +153,8 @@ public abstract class JavaFXDirectRenderingTest extends Application {
     private long maxFrameTime;
     private long totalFrameTime;
 
+    private final Semaphore timerSemaphore = new Semaphore(1);
+
     /**
      *
      */
@@ -161,33 +164,7 @@ public abstract class JavaFXDirectRenderingTest extends Application {
         mediaPlayerFactory = new MediaPlayerFactory();
         mediaPlayer = mediaPlayerFactory.mediaPlayers().newEmbeddedMediaPlayer();
 
-        mediaPlayer.events().addMediaPlayerEventListener(new MediaPlayerEventAdapter() {
-            @Override
-            public void playing(MediaPlayer mediaPlayer) {
-//                startTimer();
-            }
-
-            @Override
-            public void paused(MediaPlayer mediaPlayer) {
-//                stopTimer();
-//                pauseTimer();
-            }
-
-            @Override
-            public void stopped(MediaPlayer mediaPlayer) {
-//                stopTimer();
-            }
-
-            @Override
-            public void finished(MediaPlayer mediaPlayer) {
-//                stopTimer();
-            }
-
-            @Override
-            public void error(MediaPlayer mediaPlayer) {
-//                stopTimer();
-            }
-        });
+        mediaPlayer.events().addMediaPlayerEventListener(new TimerHandler(this));
 
         mediaPlayer.videoSurface().set(new JavaFxVideoSurface());
 
@@ -204,6 +181,12 @@ public abstract class JavaFXDirectRenderingTest extends Application {
         canvas.widthProperty().bind(canvasPane.widthProperty());
         canvas.heightProperty().bind(canvasPane.heightProperty());
 
+        // Listen to width/height changes to force the video surface to re-render if the media player is not currently
+        // playing - this is necessary to repaint damaged regions because the repaint timer is stopped/paused while the
+        // media player is not playing
+        canvas.widthProperty().addListener(event -> {if (!mediaPlayer.status().isPlaying()) renderFrame();});
+        canvas.heightProperty().addListener(event -> {if (!mediaPlayer.status().isPlaying()) renderFrame();});
+
         borderPane.setCenter(canvasPane);
 
         Pane statusPane = new Pane();
@@ -219,10 +202,19 @@ public abstract class JavaFXDirectRenderingTest extends Application {
         borderPane.setBottom(cp);
 
         borderPane.setTop(createMenu());
+
+        mediaPlayer.events().addMediaPlayerEventListener(new MediaPlayerEventAdapter() {
+            @Override
+            public void playing(MediaPlayer mediaPlayer) {
+                // Reset the frame stats each time the media is started (otherwise e.g. a pause would mess with the
+                // stats (like FPS)
+                resetStats();
+            }
+        });
     }
 
     @Override
-    public final void start(Stage primaryStage) throws Exception {
+    public final void start(Stage primaryStage) {
         this.stage = primaryStage;
 
         stage.setTitle("vlcj JavaFX PixelBuffer test");
@@ -240,7 +232,7 @@ public abstract class JavaFXDirectRenderingTest extends Application {
     }
 
     @Override
-    public final void stop() throws Exception {
+    public final void stop() {
         stopTimer();
 
         mediaPlayer.controls().stop();
@@ -283,11 +275,6 @@ public abstract class JavaFXDirectRenderingTest extends Application {
             img = new WritableImage(pixelBuffer);
             // Since for every frame the entire buffer will be updated, we can optimise by caching the result here
             updatedBuffer = new Rectangle2D(0, 0, bufferWidth, bufferHeight);
-
-            start = System.currentTimeMillis();
-            frames = 0;
-            maxFrameTime = 0;
-            totalFrameTime = 0;
         }
 
     }
@@ -376,6 +363,16 @@ public abstract class JavaFXDirectRenderingTest extends Application {
         totalFrameTime += renderTime;
     }
 
+    /**
+     * A crude, but fast, renderer to draw outlined text.
+     * <p>
+     * Generally the approach here is faster than getting the text outline and stroking it.
+     *
+     * @param g
+     * @param text
+     * @param x
+     * @param y
+     */
     private void renderText(GraphicsContext g, String text, double x, double y) {
         g.setFont(FONT);
         g.setFill(BLACK);
@@ -387,10 +384,22 @@ public abstract class JavaFXDirectRenderingTest extends Application {
         g.fillText(text, x, y);
     }
 
+    private void resetStats() {
+        start = System.currentTimeMillis();
+        frames = 0;
+        maxFrameTime = 0;
+        totalFrameTime = 0;
+    }
+
     /**
      *
      */
     protected abstract void startTimer();
+
+    /**
+     *
+     */
+    protected abstract void pauseTimer();
 
     /**
      *

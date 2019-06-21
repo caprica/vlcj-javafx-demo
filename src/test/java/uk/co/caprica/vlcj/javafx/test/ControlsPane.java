@@ -59,7 +59,6 @@ public class ControlsPane extends TilePane {
     private Button createButton(String name, String icon) {
         Button button = new Button();
         String url = String.format("/icons/buttons/%s.png", icon);
-        System.out.println(url);
         Image image = new Image(getClass().getResourceAsStream(url));
         button.setGraphic(new ImageView(image));
         button.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);

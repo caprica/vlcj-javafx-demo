@@ -19,6 +19,7 @@
 
 package uk.co.caprica.vlcj.javafx.test;
 
+import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
@@ -60,12 +61,23 @@ public class TimelineJavaFXDirectRenderingTest extends JavaFXDirectRenderingTest
 
     @Override
     protected void startTimer() {
-        timeline.playFromStart();
+        if (timeline.getStatus() != Animation.Status.RUNNING) {
+            timeline.play();
+        }
+    }
+
+    @Override
+    protected void pauseTimer() {
+        if (timeline.getStatus() != Animation.Status.PAUSED) {
+            timeline.pause();
+        }
     }
 
     @Override
     protected void stopTimer() {
-        timeline.stop();
+        if (timeline.getStatus() != Animation.Status.STOPPED) {
+            timeline.stop();
+        }
     }
 
     /**
