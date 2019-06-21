@@ -1,5 +1,8 @@
 package uk.co.caprica.vlcj.javafx.test;
 
+import uk.co.caprica.vlcj.binding.LibX11;
+import uk.co.caprica.vlcj.factory.MediaPlayerFactory;
+
 /**
  * A stupid wrapper class to avoid the Java Module System because the Java Module System is a PITA.
  * <p>
@@ -14,6 +17,12 @@ public class JavaFxLauncher {
         ANIMATION_TIMER,
         NANO_TIMER,
         TIMELINE
+    }
+
+    static {
+        // We initialise vlcj early - this is sometimes needed to prevent a JVM crash when opening dialogs on Linux
+        // (some unexplained problem with vlcj integration)
+        new MediaPlayerFactory().release();
     }
 
     /**

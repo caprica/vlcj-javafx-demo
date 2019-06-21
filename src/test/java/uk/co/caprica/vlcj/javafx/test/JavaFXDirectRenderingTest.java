@@ -26,6 +26,7 @@ import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuBar;
 import javafx.scene.image.PixelBuffer;
 import javafx.scene.image.PixelFormat;
 import javafx.scene.image.WritableImage;
@@ -35,6 +36,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.transform.Affine;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import uk.co.caprica.vlcj.factory.MediaPlayerFactory;
 import uk.co.caprica.vlcj.player.base.MediaPlayer;
@@ -47,6 +49,7 @@ import uk.co.caprica.vlcj.player.embedded.videosurface.callback.BufferFormatCall
 import uk.co.caprica.vlcj.player.embedded.videosurface.callback.RenderCallback;
 import uk.co.caprica.vlcj.player.embedded.videosurface.callback.format.RV32BufferFormat;
 
+import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.concurrent.Semaphore;
 
@@ -67,8 +70,7 @@ import static uk.co.caprica.vlcj.javafx.test.MenuBuilder.createMenu;
 //  3. It does not seem to make much difference whether the buffer is marked as updated in the native display callback,
 //     or if you wait until the renderFrame() method (so this is native thread vs timer implementation) - both
 //     approaches work with minimal performance differences
-//  4. Need fullscreen solution for vlcj+JavaFX
-//  5. Timer could be stopped/paused/restarted when video stops/pauses/restarts
+//  4. Timer could be stopped/paused/restarted when video stops/pauses/restarts
 
 /**
  * Example showing how to render video to a JavaFX Canvas component.
@@ -96,11 +98,6 @@ public abstract class JavaFXDirectRenderingTest extends Application {
     private static final Font FONT = Font.font("Monospace", 40);
 
     /**
-     * Filename of the video to play.
-     */
-    private static final String VIDEO_FILE = "YOUR VIDEO HERE";
-
-    /**
      * Lightweight JavaFX canvas, the video is rendered here.
      */
     private final Canvas canvas;
@@ -114,6 +111,8 @@ public abstract class JavaFXDirectRenderingTest extends Application {
      *
      */
     private final BorderPane borderPane;
+
+    private final FileChooser fileChooser;
 
     /**
      *
@@ -134,6 +133,10 @@ public abstract class JavaFXDirectRenderingTest extends Application {
      *
      */
     private Scene scene;
+
+    private MenuBar menuBar;
+
+    private ControlsPane controlsPane;
 
     private int bufferWidth;
 
@@ -198,10 +201,19 @@ public abstract class JavaFXDirectRenderingTest extends Application {
 
         borderPane.setBottom(statusPane);
 
-        ControlsPane cp = new ControlsPane(mediaPlayer);
-        borderPane.setBottom(cp);
+        controlsPane = new ControlsPane(mediaPlayer);
+        borderPane.setBottom(controlsPane);
 
-        borderPane.setTop(createMenu());
+        menuBar = createMenu(this);
+        borderPane.setTop(menuBar);
+
+        fileChooser = new FileChooser();
+        fileChooser.setTitle("Open Media File");
+        fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
+        fileChooser.getExtensionFilters().addAll(
+            new FileChooser.ExtensionFilter("Media Files", "*.flv", "*.mp4"),
+            new FileChooser.ExtensionFilter("All Files", "*.*")
+        );
 
         mediaPlayer.events().addMediaPlayerEventListener(new MediaPlayerEventAdapter() {
             @Override
@@ -218,6 +230,8 @@ public abstract class JavaFXDirectRenderingTest extends Application {
         this.stage = primaryStage;
 
         stage.setTitle("vlcj JavaFX PixelBuffer test");
+        stage.setWidth(900);
+        stage.setHeight(600);
 
         scene = new Scene(borderPane, Color.BLACK);
 
@@ -225,8 +239,6 @@ public abstract class JavaFXDirectRenderingTest extends Application {
         primaryStage.show();
 
         mediaPlayer.controls().setRepeat(true);
-
-        mediaPlayer.media().play(VIDEO_FILE);
 
         startTimer();
     }
@@ -254,16 +266,9 @@ public abstract class JavaFXDirectRenderingTest extends Application {
             bufferWidth = sourceWidth;
             bufferHeight = sourceHeight;
 
-            Platform.runLater(() -> {
-                // The stage size doesn't really matter, it's the buffer size that's important
-//                stage.setWidth(sourceWidth);
-//                stage.setHeight(sourceHeight);
+            // This does not need to be done here, but you could set the video surface size to match the native video
+            // size
 
-                // This does not need to be done here, but you could set the video surface size to match the native
-                // video size here
-                stage.setWidth(900);
-                stage.setHeight(600);
-            });
             return new RV32BufferFormat(sourceWidth, sourceHeight);
         }
 
@@ -389,6 +394,30 @@ public abstract class JavaFXDirectRenderingTest extends Application {
         frames = 0;
         maxFrameTime = 0;
         totalFrameTime = 0;
+    }
+
+    void openFile() {
+        File selectedFile = fileChooser.showOpenDialog(stage);
+        if (selectedFile != null) {
+            mediaPlayer.media().play(selectedFile.getAbsolutePath());
+        }
+    }
+
+    void toggleAlwaysOnTop() {
+        stage.setAlwaysOnTop(!stage.isAlwaysOnTop());
+    }
+
+    void toggleMinimalInterface(boolean on) {
+        menuBar.setVisible(on);
+        controlsPane.setVisible(on);
+
+        // Also need to set the managed property to prevent hidden components taking layout space
+        menuBar.setManaged(on);
+        controlsPane.setManaged(on);
+    }
+
+    void toggleFullScreen() {
+        stage.setFullScreen(!stage.isFullScreen());
     }
 
     /**

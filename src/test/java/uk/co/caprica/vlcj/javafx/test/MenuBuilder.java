@@ -19,11 +19,15 @@
 
 package uk.co.caprica.vlcj.javafx.test;
 
+import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.input.KeyCombination;
+import javafx.stage.FileChooser;
+
+import java.io.File;
 
 /**
  * Helper class to create the application main menu.
@@ -37,7 +41,7 @@ final class MenuBuilder {
      *
      * @return menu
      */
-    static MenuBar createMenu() {
+    static MenuBar createMenu(JavaFXDirectRenderingTest application) {
         MenuBar menuBar = new MenuBar();
 
         Menu mediaMenu = new Menu("_Media");
@@ -73,6 +77,17 @@ final class MenuBuilder {
         Menu viewMenu = new Menu("V_iew");
         viewMenu.setMnemonicParsing(true);
 
+        CheckMenuItem viewAlwaysOnTopMenuItem = new CheckMenuItem("Always on _top");
+        viewAlwaysOnTopMenuItem.setMnemonicParsing(true);
+        viewMenu.getItems().add(viewAlwaysOnTopMenuItem);
+
+        viewMenu.getItems().add(new SeparatorMenuItem());
+
+        CheckMenuItem viewMinimalInterfaceMenuItem = new CheckMenuItem("Mi_nimal Interface");
+        viewMinimalInterfaceMenuItem.setMnemonicParsing(true);
+        viewMinimalInterfaceMenuItem.setAccelerator(KeyCombination.keyCombination("Ctrl+H"));
+        viewMenu.getItems().add(viewMinimalInterfaceMenuItem);
+
         MenuItem viewFullScreenMenuItem = new MenuItem("_Fullscreen Interface");
         viewFullScreenMenuItem.setMnemonicParsing(true);
         viewFullScreenMenuItem.setAccelerator(KeyCombination.keyCombination("F11"));
@@ -89,6 +104,12 @@ final class MenuBuilder {
         helpMenu.getItems().add(helpAboutMenuItem);
 
         menuBar.getMenus().add(helpMenu);
+
+        mediaOpenFileMenuItem.setOnAction(actionEvent -> application.openFile());
+
+        viewAlwaysOnTopMenuItem.setOnAction(actionEvent -> application.toggleAlwaysOnTop());
+        viewMinimalInterfaceMenuItem.setOnAction(actionEvent -> application.toggleMinimalInterface(!viewMinimalInterfaceMenuItem.isSelected()));
+        viewFullScreenMenuItem.setOnAction(actionEvent -> application.toggleFullScreen());
 
         return menuBar;
     }
