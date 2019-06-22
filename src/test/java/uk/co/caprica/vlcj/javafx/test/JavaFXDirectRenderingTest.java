@@ -19,12 +19,19 @@
 
 package uk.co.caprica.vlcj.javafx.test;
 
+import javafx.animation.Interpolator;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuBar;
 import javafx.scene.image.PixelBuffer;
@@ -35,9 +42,12 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Affine;
 import javafx.stage.FileChooser;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import uk.co.caprica.vlcj.factory.MediaPlayerFactory;
 import uk.co.caprica.vlcj.player.base.MediaPlayer;
 import uk.co.caprica.vlcj.player.base.MediaPlayerEventAdapter;
@@ -51,7 +61,6 @@ import uk.co.caprica.vlcj.player.embedded.videosurface.callback.format.RV32Buffe
 
 import java.io.File;
 import java.nio.ByteBuffer;
-import java.util.concurrent.Semaphore;
 
 import static uk.co.caprica.vlcj.javafx.test.MenuBuilder.createMenu;
 
@@ -70,22 +79,24 @@ import static uk.co.caprica.vlcj.javafx.test.MenuBuilder.createMenu;
 //  3. It does not seem to make much difference whether the buffer is marked as updated in the native display callback,
 //     or if you wait until the renderFrame() method (so this is native thread vs timer implementation) - both
 //     approaches work with minimal performance differences
-//  4. Timer could be stopped/paused/restarted when video stops/pauses/restarts
 
 /**
  * Example showing how to render video to a JavaFX Canvas component.
  * <p>
  * The target is to render full HD video (1920x1080) at a reasonable frame rate (>25fps).
  * <p>
- * This test can render the video at a fixed size, or it can take the size from the video itself.
+ * Originally based on an example long ago contributed by John Hendrikx, now almost completely reimplemented with a
+ * different approach to video scaling - the video is always rendered at its native size, but the graphics context
+ * itself is scaled to resize the video, a similar implementation to how the equivalent Swing version now works.
  * <p>
- * Originally based on an example contributed by John Hendrikx.
+ * This version requires a build of JavaFX with the proposed PixelBuffer class, currently this is available only as a
+ * custom build of JavaFX from here https://mail.openjdk.java.net/pipermail/openjfx-dev/2019-June/023347.html.
  * <p>
- * This version takes a different approach to video scaling - the video is always rendered at its native size, but the
- * graphics context itself is scaled to resize the video, a similar implementation to how the equivalent Swing version
- * now works.
+ * Using the PixelBuffer means that LibVLC can now render directly into a native video buffer that is shared with the
+ * JavaFX image used to render the video frame.
  * <p>
- * This version works with JavaFX on JDK 1.8, without "wrong thread" errors.
+ * This approach now, along with JavaFX hardware acceleration, probably outperforms the corresponding implementation
+ * that uses Swing/Java2D.
  */
 public abstract class JavaFXDirectRenderingTest extends Application {
 
@@ -153,10 +164,17 @@ public abstract class JavaFXDirectRenderingTest extends Application {
 
     private boolean showStats = true;
 
+    private boolean showAnimation = true;
+
     private long start;
     private long frames;
     private long maxFrameTime;
     private long totalFrameTime;
+
+    DoubleProperty x  = new SimpleDoubleProperty();
+    DoubleProperty y  = new SimpleDoubleProperty();
+
+    DoubleProperty opacity = new SimpleDoubleProperty();
 
     /**
      *
@@ -211,7 +229,7 @@ public abstract class JavaFXDirectRenderingTest extends Application {
         fileChooser.setTitle("Open Media File");
         fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
         fileChooser.getExtensionFilters().addAll(
-            new FileChooser.ExtensionFilter("Media Files", "*.flv", "*.mp4"),
+            new FileChooser.ExtensionFilter("Media Files", "*.avi", "*.flv", "*.mp4", "*.mpeg", "*.mpg", ".wmv"),
             new FileChooser.ExtensionFilter("All Files", "*.*")
         );
 
@@ -223,6 +241,33 @@ public abstract class JavaFXDirectRenderingTest extends Application {
                 resetStats();
             }
         });
+
+        Timeline timeline = new Timeline(
+            new KeyFrame(Duration.seconds(0),
+                new KeyValue(x, 10, Interpolator.EASE_BOTH),
+                new KeyValue(y, 10)
+            ),
+            new KeyFrame(Duration.seconds(0.5),
+                new KeyValue(x, 70, Interpolator.EASE_BOTH),
+                new KeyValue(y, 10)
+            )
+        );
+        timeline.setAutoReverse(true);
+        timeline.setCycleCount(Timeline.INDEFINITE);
+
+        Timeline timeline2 = new Timeline(
+            new KeyFrame(Duration.seconds(0),
+                new KeyValue(opacity, 0, Interpolator.EASE_BOTH)
+            ),
+            new KeyFrame(Duration.seconds(0.5),
+                new KeyValue(opacity, 1, Interpolator.EASE_BOTH)
+            )
+        );
+        timeline2.setAutoReverse(true);
+        timeline2.setCycleCount(Timeline.INDEFINITE);
+
+        timeline.play();
+        timeline2.play();
     }
 
     @Override
@@ -343,8 +388,7 @@ public abstract class JavaFXDirectRenderingTest extends Application {
 
             g.drawImage(img, 0, 0);
 
-            long now = System.currentTimeMillis();
-            double fps = (double) 1000 * frames / (now - start);
+            double fps = (double) 1000 * frames / (renderStart - start);
             double meanFrameTime = totalFrameTime / (double) frames;
 
             if (showStats) {
@@ -354,10 +398,26 @@ public abstract class JavaFXDirectRenderingTest extends Application {
                     "    FPS: %01.1f\n" +
                     "Maximum: %d ms\n" +
                     "   Mean: %01.3f ms",
-                    frames, (now - start) / 1000, fps, maxFrameTime, meanFrameTime
+                    frames, (renderStart - start) / 1000, fps, maxFrameTime, meanFrameTime
                 );
 
                 renderText(g, val, 100, 200);
+            }
+
+            if (showAnimation) {
+                g.setFill(Color.CORNSILK);
+                g.fillOval(
+                    x.doubleValue(),
+                    y.doubleValue(),
+                    40,
+                    40);
+
+                g.save();
+                g.setGlobalAlpha(opacity.doubleValue());
+                g.setTextAlign(TextAlignment.CENTER);
+//                g.setTextBaseline(VPos.CENTER);
+                renderText(g, "vlcj JavaFX PixelBuffer Win!", img.getWidth() / 2, img.getHeight() - 120);
+                g.restore();
             }
 
             g.setTransform(ax);
@@ -365,9 +425,10 @@ public abstract class JavaFXDirectRenderingTest extends Application {
 
         long renderTime = System.currentTimeMillis() - renderStart;
 
-        maxFrameTime = Math.max(maxFrameTime, renderTime);
-
-        totalFrameTime += renderTime;
+        if (renderStart - start > 1000) {
+            maxFrameTime = Math.max(maxFrameTime, renderTime);
+            totalFrameTime += renderTime;
+        }
     }
 
     /**
@@ -424,6 +485,25 @@ public abstract class JavaFXDirectRenderingTest extends Application {
 
     void toggleStatsOverlay(boolean show) {
         showStats = show;
+    }
+
+    void toggleAnimationOverlay(boolean show) {
+        showAnimation = show;
+    }
+
+    void showAbout() {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("About vlcj JavaFX");
+        alert.setHeaderText(null);
+        alert.setContentText(
+            "This demo shows how to use vlcj with JavaFX and the new proposed JavaFX PixelBuffer class.\n\n" +
+            "PixelBuffer allows us to share the native video buffer directly which means we can reduce the number of full-frame copies for nice performance!\n\n" +
+            "This means LibVLC renders *directly* into the buffer used to render the frame image in a JavaFX canvas.\n\n" +
+            "If you're interested in vlcj and JavaFX you should lobby hard for next version of JavaFX to include PixelBuffer!"
+        );
+        alert.initOwner(stage);
+        alert.initModality(Modality.APPLICATION_MODAL);
+        alert.showAndWait();
     }
 
     MediaPlayer mediaPlayer() {

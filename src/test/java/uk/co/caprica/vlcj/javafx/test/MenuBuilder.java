@@ -25,10 +25,7 @@ import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.input.KeyCombination;
-import javafx.stage.FileChooser;
 import uk.co.caprica.vlcj.player.base.MediaPlayer;
-
-import java.io.File;
 
 /**
  * Helper class to create the application main menu.
@@ -124,12 +121,18 @@ final class MenuBuilder {
         viewStatsOverlayMenuItem.setAccelerator(KeyCombination.keyCombination("Ctrl+S"));
         viewStatsOverlayMenuItem.setSelected(true);
 
+        CheckMenuItem viewAnimationOverlayMenuItem = new CheckMenuItem("_Animation Overlay");
+        viewAnimationOverlayMenuItem.setMnemonicParsing(true);
+        viewAnimationOverlayMenuItem.setAccelerator(KeyCombination.keyCombination("Ctrl+A"));
+        viewAnimationOverlayMenuItem.setSelected(true);
+
         viewMenu.getItems().add(viewAlwaysOnTopMenuItem);
         viewMenu.getItems().add(new SeparatorMenuItem());
         viewMenu.getItems().add(viewMinimalInterfaceMenuItem);
         viewMenu.getItems().add(viewFullScreenMenuItem);
         viewMenu.getItems().add(new SeparatorMenuItem());
         viewMenu.getItems().add(viewStatsOverlayMenuItem);
+        viewMenu.getItems().add(viewAnimationOverlayMenuItem);
 
         menuBar.getMenus().add(viewMenu);
 
@@ -158,6 +161,9 @@ final class MenuBuilder {
         viewMinimalInterfaceMenuItem.setOnAction(actionEvent -> application.toggleMinimalInterface(!viewMinimalInterfaceMenuItem.isSelected()));
         viewFullScreenMenuItem.setOnAction(actionEvent -> application.toggleFullScreen());
         viewStatsOverlayMenuItem.setOnAction(actionEvent -> application.toggleStatsOverlay(viewStatsOverlayMenuItem.isSelected()));
+        viewAnimationOverlayMenuItem.setOnAction(actionEvent -> application.toggleAnimationOverlay(viewAnimationOverlayMenuItem.isSelected()));
+
+        helpAboutMenuItem.setOnAction(actionEvent -> application.showAbout());
 
         return menuBar;
     }
