@@ -285,11 +285,15 @@ public abstract class JavaFXDirectRenderingTest extends Application {
 
         scene = new Scene(borderPane, Color.BLACK);
 
+        stage.setOnCloseRequest(windowEvent -> System.exit(0));
+
         videoControlsStage = new Stage(StageStyle.UNDECORATED);
         videoControlsStage.setTitle("Video Adjustments");
         videoControlsStage.setScene(new Scene(new VideoControlsPane(mediaPlayer), Color.BLACK));
-        videoControlsStage.setX(0);
-        videoControlsStage.setY(0);
+        videoControlsStage.setOnShowing(windowEvent -> {
+            videoControlsStage.setX(stage.getX() + stage.getWidth() + 4);
+            videoControlsStage.setY(stage.getY());
+        });
         videoControlsStage.sizeToScene();
 
         primaryStage.setScene(scene);
@@ -427,7 +431,6 @@ public abstract class JavaFXDirectRenderingTest extends Application {
                 g.save();
                 g.setGlobalAlpha(opacity.doubleValue());
                 g.setTextAlign(TextAlignment.CENTER);
-//                g.setTextBaseline(VPos.CENTER);
                 renderText(g, "vlcj JavaFX PixelBuffer Win!", img.getWidth() / 2, img.getHeight() - 120);
                 g.restore();
             }
@@ -480,8 +483,6 @@ public abstract class JavaFXDirectRenderingTest extends Application {
     void adjustVideo(boolean selected) {
         if (selected) {
             videoControlsStage.show();
-            videoControlsStage.setX(stage.getX() - videoControlsStage.getWidth() - 4);
-            videoControlsStage.setY(stage.getY());
             mediaPlayer.video().setAdjustVideo(true);
         } else {
             videoControlsStage.hide();
