@@ -32,7 +32,7 @@ public class CursorHandler {
         this.timeout = timeout;
         this.timer = new Timer();
 
-        node.setOnMouseMoved(mouseEvent -> mouseMoved());
+        node.setOnMouseMoved(mouseEvent -> showCursor());
     }
 
     public void start() {
@@ -46,11 +46,6 @@ public class CursorHandler {
         }, 1000, 1000);
     }
 
-    private void mouseMoved() {
-        showCursor();
-        resetTimer();
-    }
-
     private synchronized void hideCursor() {
         hidden.set(true);
         node.setCursor(Cursor.NONE);
@@ -59,10 +54,6 @@ public class CursorHandler {
     private synchronized void showCursor() {
         hidden.set(false);
         node.setCursor(Cursor.DEFAULT);
-    }
-
-    private void resetTimer() {
         lastMouse = System.currentTimeMillis();
     }
-
 }
