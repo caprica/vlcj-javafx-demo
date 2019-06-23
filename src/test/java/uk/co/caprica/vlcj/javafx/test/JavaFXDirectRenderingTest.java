@@ -28,6 +28,7 @@ import javafx.application.Platform;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.geometry.Rectangle2D;
+import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -109,6 +110,8 @@ public abstract class JavaFXDirectRenderingTest extends Application {
     private static final Color WHITE = new Color(1,1,1,1);
     private static final Font FONT = Font.font("Monospace", 40);
 
+    private static final long MOUSE_TIMEOUT = 3000;
+
     /**
      * Lightweight JavaFX canvas, the video is rendered here.
      */
@@ -178,6 +181,8 @@ public abstract class JavaFXDirectRenderingTest extends Application {
     DoubleProperty y  = new SimpleDoubleProperty();
 
     DoubleProperty opacity = new SimpleDoubleProperty();
+
+    private final CursorHandler cursorHandler;
 
     /**
      *
@@ -271,6 +276,9 @@ public abstract class JavaFXDirectRenderingTest extends Application {
 
         timeline.play();
         timeline2.play();
+
+        cursorHandler = new CursorHandler(canvas, MOUSE_TIMEOUT);
+        cursorHandler.start();
     }
 
     @Override
