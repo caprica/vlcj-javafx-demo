@@ -102,6 +102,16 @@ final class MenuBuilder {
 
 //        menuBar.getMenus().add(audioMenu);
 
+        Menu toolsMenu = new Menu("Tool_s");
+        toolsMenu.setMnemonicParsing(true);
+
+        CheckMenuItem toolsVideoAdjustmentMenuItem = new CheckMenuItem("Adjust _Video");
+        toolsVideoAdjustmentMenuItem.setMnemonicParsing(true);
+
+        toolsMenu.getItems().add(toolsVideoAdjustmentMenuItem);
+
+        menuBar.getMenus().add(toolsMenu);
+
         Menu viewMenu = new Menu("V_iew");
         viewMenu.setMnemonicParsing(true);
 
@@ -156,6 +166,8 @@ final class MenuBuilder {
         playbackStopMenuItem.setOnAction(actionEvent -> mediaPlayer.controls().stop());
 
         audioMuteMenuItem.setOnAction(actionEvent -> mediaPlayer.audio().setMute(audioMuteMenuItem.isSelected()));
+
+        toolsVideoAdjustmentMenuItem.setOnAction(actionEvent -> application.adjustVideo(toolsVideoAdjustmentMenuItem.isSelected()));
 
         viewAlwaysOnTopMenuItem.setOnAction(actionEvent -> application.toggleAlwaysOnTop());
         viewMinimalInterfaceMenuItem.setOnAction(actionEvent -> application.toggleMinimalInterface(!viewMinimalInterfaceMenuItem.isSelected()));

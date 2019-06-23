@@ -47,6 +47,7 @@ import javafx.scene.transform.Affine;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import javafx.util.Duration;
 import uk.co.caprica.vlcj.factory.MediaPlayerFactory;
 import uk.co.caprica.vlcj.player.base.MediaPlayer;
@@ -139,6 +140,8 @@ public abstract class JavaFXDirectRenderingTest extends Application {
      *
      */
     private Stage stage;
+
+    private Stage videoControlsStage;
 
     /**
      *
@@ -275,10 +278,19 @@ public abstract class JavaFXDirectRenderingTest extends Application {
         this.stage = primaryStage;
 
         stage.setTitle("vlcj JavaFX PixelBuffer test");
+        stage.setX(400);
+        stage.setY(200);
         stage.setWidth(900);
         stage.setHeight(600);
 
         scene = new Scene(borderPane, Color.BLACK);
+
+        videoControlsStage = new Stage(StageStyle.UNDECORATED);
+        videoControlsStage.setTitle("Video Adjustments");
+        videoControlsStage.setScene(new Scene(new VideoControlsPane(mediaPlayer), Color.BLACK));
+        videoControlsStage.setX(0);
+        videoControlsStage.setY(0);
+        videoControlsStage.sizeToScene();
 
         primaryStage.setScene(scene);
         primaryStage.show();
@@ -423,9 +435,8 @@ public abstract class JavaFXDirectRenderingTest extends Application {
             g.setTransform(ax);
         }
 
-        long renderTime = System.currentTimeMillis() - renderStart;
-
         if (renderStart - start > 1000) {
+            long renderTime = System.currentTimeMillis() - renderStart;
             maxFrameTime = Math.max(maxFrameTime, renderTime);
             totalFrameTime += renderTime;
         }
@@ -463,6 +474,18 @@ public abstract class JavaFXDirectRenderingTest extends Application {
         File selectedFile = fileChooser.showOpenDialog(stage);
         if (selectedFile != null) {
             mediaPlayer.media().play(selectedFile.getAbsolutePath());
+        }
+    }
+
+    void adjustVideo(boolean selected) {
+        if (selected) {
+            videoControlsStage.show();
+            videoControlsStage.setX(stage.getX() - videoControlsStage.getWidth() - 4);
+            videoControlsStage.setY(stage.getY());
+            mediaPlayer.video().setAdjustVideo(true);
+        } else {
+            videoControlsStage.hide();
+            mediaPlayer.video().setAdjustVideo(false);
         }
     }
 
