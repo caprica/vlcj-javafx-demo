@@ -81,6 +81,9 @@ import static uk.co.caprica.vlcj.javafx.test.MenuBuilder.createMenu;
 //  3. It does not seem to make much difference whether the buffer is marked as updated in the native display callback,
 //     or if you wait until the renderFrame() method (so this is native thread vs timer implementation) - both
 //     approaches work with minimal performance differences
+//  4. The timeline control is not perfect, it has some small issues which would need to be ironed out for a real
+//     application rather than a demo (like clicking and releasing inside the control without touching the slider or
+//     its track-bar can cause a sub-optimal position change)
 
 /**
  * Example showing how to render video to a JavaFX Canvas component.
