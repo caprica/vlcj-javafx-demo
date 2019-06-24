@@ -112,7 +112,6 @@ public class ControlsPane extends VBox {
     }
 
     private synchronized void updateSliderPosition(float newValue) {
-        System.out.println(newValue);
         if (!tracking.get()) {
             timelineSlider.setValue(newValue * 100);
         }
