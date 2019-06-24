@@ -25,6 +25,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Slider;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
 import uk.co.caprica.vlcj.player.base.MediaPlayer;
@@ -109,6 +110,8 @@ public class ControlsPane extends VBox {
 
     private synchronized void endTracking() {
         tracking.set(false);
+        // This deal with the case where there was an absolute click in the timeline rather than a drag
+        mediaPlayer.controls().setPosition((float) timelineSlider.getValue() / 100);
     }
 
     private synchronized void updateSliderPosition(float newValue) {
