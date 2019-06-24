@@ -28,19 +28,21 @@ import javafx.application.Platform;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.geometry.Rectangle2D;
-import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuBar;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.image.PixelBuffer;
 import javafx.scene.image.PixelFormat;
 import javafx.scene.image.WritableImage;
 import javafx.scene.image.WritablePixelFormat;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
@@ -113,27 +115,13 @@ public abstract class JavaFXDirectRenderingTest extends Application {
     private static final Color WHITE = new Color(1,1,1,1);
     private static final Font FONT = Font.font("Monospace", 40);
 
+    /**
+     * Mouse pointer will be hidden when over the video surface after this inactivity timeout (milliseconds).
+     */
     private static final long MOUSE_TIMEOUT = 3000;
 
     /**
-     * Lightweight JavaFX canvas, the video is rendered here.
-     */
-    private final Canvas canvas;
-
-    /**
-     * Pixel format.
-     */
-    private final WritablePixelFormat<ByteBuffer> pixelFormat;
-
-    /**
-     *
-     */
-    private final BorderPane borderPane;
-
-    private final FileChooser fileChooser;
-
-    /**
-     *
+     * The vlcj media player factory.
      */
     private final MediaPlayerFactory mediaPlayerFactory;
 
@@ -141,6 +129,38 @@ public abstract class JavaFXDirectRenderingTest extends Application {
      * The vlcj direct rendering media player component.
      */
     private final EmbeddedMediaPlayer mediaPlayer;
+
+    /**
+     * Standard pixel format for the video buffer.
+     */
+    private final WritablePixelFormat<ByteBuffer> pixelFormat;
+
+    /**
+     * Lightweight JavaFX canvas, the video is rendered here.
+     */
+    private final Canvas canvas;
+
+    /**
+     * Wrapper component for the video surface, to manage resizes properly.
+     */
+    private final Pane canvasPane;
+
+    /**
+     * Alternate main view when media is not playing.
+     */
+    private final ImageView imageView;
+
+    /**
+     * Component holding the main views that can be switched between.
+     */
+    private final StackPane stackPane;
+
+    /**
+     *
+     */
+    private final BorderPane borderPane;
+
+    private final FileChooser fileChooser;
 
     /**
      *
@@ -180,10 +200,10 @@ public abstract class JavaFXDirectRenderingTest extends Application {
     private long maxFrameTime;
     private long totalFrameTime;
 
-    DoubleProperty x  = new SimpleDoubleProperty();
-    DoubleProperty y  = new SimpleDoubleProperty();
+    private final DoubleProperty x  = new SimpleDoubleProperty();
+    private final DoubleProperty y  = new SimpleDoubleProperty();
 
-    DoubleProperty opacity = new SimpleDoubleProperty();
+    private final DoubleProperty opacity = new SimpleDoubleProperty();
 
     private final CursorHandler cursorHandler;
 
@@ -206,7 +226,7 @@ public abstract class JavaFXDirectRenderingTest extends Application {
         canvas = new Canvas();
         canvas.setStyle(BLACK_BACKGROUND_STYLE);
 
-        Pane canvasPane = new Pane();
+        canvasPane = new Pane();
         canvasPane.setStyle(BLACK_BACKGROUND_STYLE);
         canvasPane.getChildren().add(canvas);
 
@@ -219,7 +239,11 @@ public abstract class JavaFXDirectRenderingTest extends Application {
         canvas.widthProperty().addListener(event -> {if (!mediaPlayer.status().isPlaying()) renderFrame();});
         canvas.heightProperty().addListener(event -> {if (!mediaPlayer.status().isPlaying()) renderFrame();});
 
-        borderPane.setCenter(canvasPane);
+        imageView = new ImageView(new Image(getClass().getResourceAsStream("/vlcj-logo.png")));
+
+        stackPane = new StackPane();
+        stackPane.getChildren().addAll(canvasPane, imageView);
+        borderPane.setCenter(stackPane);
 
         Pane statusPane = new Pane();
         statusPane.setStyle(STATUS_BACKGROUND_STYLE);
@@ -246,7 +270,20 @@ public abstract class JavaFXDirectRenderingTest extends Application {
 
         mediaPlayer.events().addMediaPlayerEventListener(new MediaPlayerEventAdapter() {
             @Override
+            public void finished(MediaPlayer mediaPlayer) {
+                if (!mediaPlayer.controls().getRepeat()) {
+                    showVideo(false);
+                }
+            }
+
+            @Override
+            public void error(MediaPlayer mediaPlayer) {
+                showVideo(false);
+            }
+
+            @Override
             public void playing(MediaPlayer mediaPlayer) {
+                showVideo(true);
                 // Reset the frame stats each time the media is started (otherwise e.g. a pause would mess with the
                 // stats (like FPS)
                 resetStats();
@@ -543,6 +580,13 @@ public abstract class JavaFXDirectRenderingTest extends Application {
 
     MediaPlayer mediaPlayer() {
         return mediaPlayer;
+    }
+
+    private void showVideo(boolean show) {
+        Platform.runLater(() -> {
+            canvasPane.setVisible(show);
+            imageView.setVisible(!show);
+        });
     }
 
     /**
