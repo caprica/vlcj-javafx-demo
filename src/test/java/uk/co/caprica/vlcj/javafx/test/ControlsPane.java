@@ -21,16 +21,22 @@ package uk.co.caprica.vlcj.javafx.test;
 
 import javafx.application.Platform;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.MouseButton;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
 import uk.co.caprica.vlcj.player.base.MediaPlayer;
 import uk.co.caprica.vlcj.player.base.MediaPlayerEventAdapter;
 
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -44,7 +50,9 @@ public class ControlsPane extends VBox {
 
     private final MediaPlayer mediaPlayer;
 
+    private final Label currentTimeLabel;
     private final Slider timelineSlider;
+    private final Label durationLabel;
 
     private final Button playButton;
     private final Button pauseButton;
@@ -52,11 +60,25 @@ public class ControlsPane extends VBox {
 
     private final AtomicBoolean tracking = new AtomicBoolean();
 
+    private Timer clockTimer;
+
     public ControlsPane(MediaPlayer mediaPlayer) {
         this.mediaPlayer = mediaPlayer;
 
+        currentTimeLabel = new Label(Time.formatTime(0L));
+
         timelineSlider = new Slider(0, 100, 0);
         timelineSlider.setPadding(new Insets(8));
+
+        durationLabel = new Label(Time.formatTime(0L));
+
+        HBox box = new HBox();
+        box.setAlignment(Pos.CENTER);
+        HBox.setHgrow(currentTimeLabel, Priority.NEVER);
+        HBox.setHgrow(timelineSlider, Priority.ALWAYS);
+        HBox.setHgrow(durationLabel, Priority.NEVER);
+
+        box.getChildren().addAll(currentTimeLabel, timelineSlider, durationLabel);
 
         TilePane buttonsPane = new TilePane();
         buttonsPane.setPadding(new Insets(8));
@@ -67,7 +89,7 @@ public class ControlsPane extends VBox {
 
         setStyle(COMPONENT_STYLE);
 
-        getChildren().addAll(timelineSlider, buttonsPane);
+        getChildren().addAll(box, buttonsPane);
 
         buttonsPane.getChildren().addAll(playButton, pauseButton, stopButton);
 
@@ -76,6 +98,36 @@ public class ControlsPane extends VBox {
         stopButton.setOnAction(actionEvent -> mediaPlayer.controls().stop());
 
         mediaPlayer.events().addMediaPlayerEventListener(new MediaPlayerEventAdapter() {
+            @Override
+            public void playing(MediaPlayer mediaPlayer) {
+                startTimer();
+            }
+
+            @Override
+            public void paused(MediaPlayer mediaPlayer) {
+                stopTimer();
+            }
+
+            @Override
+            public void stopped(MediaPlayer mediaPlayer) {
+                stopTimer();
+            }
+
+            @Override
+            public void finished(MediaPlayer mediaPlayer) {
+                stopTimer();
+            }
+
+            @Override
+            public void error(MediaPlayer mediaPlayer) {
+                stopTimer();
+            }
+
+            @Override
+            public void lengthChanged(MediaPlayer mediaPlayer, long newLength) {
+                Platform.runLater(() -> updateDuration(newLength));
+            }
+
             @Override
             public void positionChanged(MediaPlayer mediaPlayer, float newPosition) {
                 Platform.runLater(() -> updateSliderPosition(newPosition));
@@ -96,6 +148,24 @@ public class ControlsPane extends VBox {
         button.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
         button.setStyle(BUTTON_STYLE);
         return button;
+    }
+
+    private void startTimer() {
+        clockTimer = new Timer();
+        clockTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                Platform.runLater(() -> currentTimeLabel.setText(Time.formatTime(mediaPlayer.status().time())));
+            }
+        }, 0, 1000);
+    }
+
+    private void stopTimer() {
+        clockTimer.cancel();
+    }
+
+    private void updateDuration(long newValue) {
+        durationLabel.setText(Time.formatTime(newValue));
     }
 
     private synchronized void updateMediaPlayerPosition(float newValue) {
