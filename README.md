@@ -18,9 +18,7 @@ See:
  * https://mail.openjdk.java.net/pipermail/openjfx-dev/2019-June/023347.html
 
 This project will not work immediately when you clone it, you will need to do some additional things:
- * You will need to clone and manually build the latest snapshot of vlcj from its master (4.2.0-SNAPSHOT)
-   and use this in your project or launcher rather than a vlcj release version
- * You will need to go to that mailing list link and download the experimental JavaFX package from there.
+ * You will need to download and install JavaFX 13, no earlier version is supported.
  * You will then need to manually add the JavaFX jars and native libraries to your project or launcher.
 
 
@@ -28,6 +26,8 @@ The main class is `JavaFxLauncher` which is a simple wrapper around the main `Ap
 uninteresting Java Module System avoidance reasons.
 
 ![demo](https://github.com/caprica/vlcj-javafx/blob/pixelbuffer-test/doc/vlcj-javafx-pixelbuffer.png?raw=true "demo")
+
+*See also the WritableImageDemo for probably the most optimal implementation.*
 
 Caveats
 -------
