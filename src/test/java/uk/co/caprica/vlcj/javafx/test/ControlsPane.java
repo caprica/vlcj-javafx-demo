@@ -180,7 +180,7 @@ public class ControlsPane extends VBox {
 
     private synchronized void endTracking() {
         tracking.set(false);
-        // This deal with the case where there was an absolute click in the timeline rather than a drag
+        // This deals with the case where there was an absolute click in the timeline rather than a drag
         mediaPlayer.controls().setPosition((float) timelineSlider.getValue() / 100);
     }
 
