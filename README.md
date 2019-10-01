@@ -20,6 +20,8 @@ All examples work acceptably.
 NEW!
 ====
 
+You are strongly recommended to use the new JavaFX PixelBuffer solution described below.
+
 JavaFX PixelBuffer
 ------------------
 
