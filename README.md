@@ -18,7 +18,6 @@ Performance is *really good* with PixelBuffer. This solution is likely to outper
 and likely may be the best approach for a cross-platform media player (even on OSX, which has not supported the
 optimal embedded solution for a long time now.)
 
-
 GPU Support
 -----------
 
@@ -28,14 +27,17 @@ nVidia cards seem to be better supported at the moment.
 
 If your video card is not supported then JavaFX will fall back to a software renderer. This will hobble your video playback performance.
 
-Java8 seems much better - i.e. some modern mainstream AMD graphic cards seem better supported. Under Java8 this sample application is working fine with a Radeon HD 7700 series video card on Linux.
+Java8 seems much better - i.e. some modern mainstream AMD graphic cards seem better supported. Under Java8 this sample application is
+working fine with a Radeon HD 7700 series video card on Linux. It of course works a lot better with an nVidia GeForce GTX 1050 Ti, also
+tested on Linux.
 
 Java/JavaFX Versions
 --------------------
 
-This example project now requires JDK 1.8.
+This example project now requires JDK 1.8 and JavaFX 13 (for the new PixelBuffer).
 
-Note that it is still possible in your own projects to use the same approach as this project on JDK 1.7 if you need to support that.
+Note that it is still possible in your own projects to use some of the other examples in this project on JDK 1.7 or earlier versions of
+JavaFX if you need to support that.
 
 Notes
 -----
