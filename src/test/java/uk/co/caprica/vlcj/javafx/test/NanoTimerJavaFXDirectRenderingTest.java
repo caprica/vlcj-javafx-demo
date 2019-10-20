@@ -20,6 +20,7 @@
 package uk.co.caprica.vlcj.javafx.test;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 
 /**
  * Implementation of a JavaFX direct rendering media player that uses the {@link NanoTimer}.
@@ -45,12 +46,30 @@ public final class NanoTimerJavaFXDirectRenderingTest extends JavaFXDirectRender
 
     @Override
     protected void startTimer() {
-        nanoTimer.start();
+        Platform.runLater(() -> {
+            if (!nanoTimer.isRunning()) {
+                nanoTimer.reset();
+                nanoTimer.start();
+            }
+        });
+    }
+
+    @Override
+    protected void pauseTimer() {
+        Platform.runLater(() -> {
+            if (nanoTimer.isRunning()) {
+                nanoTimer.cancel();
+            }
+        });
     }
 
     @Override
     protected void stopTimer() {
-        nanoTimer.cancel();
+        Platform.runLater(() -> {
+            if (nanoTimer.isRunning()) {
+                nanoTimer.cancel();
+            }
+        });
     }
 
     /**

@@ -5,29 +5,11 @@ vlcj-javafx-demo
 
 Demo showing how vlcj can be used to render video to a JavaFX Canvas.
 
-This uses the vlcj direct rendering media player component. It can not hope to perform as well as 
-the native heavyweight rendering using an AWT Canvas, but nevertheless smooth full HD playback 
-is possible.
+The new JavaFX PixelBuffer is used to avoid a full-frame buffer copy, this is the strongly recommended approach.
 
-There are three tests showing how to play video in JavaFX, each extends a common test-case with a specific timer implementation:
-
- - JavaFX Timeline;
- - Bespoke "NanoTimer" using a JavaFX ScheduledService;
- - JavaFX AnimationTimer 
-
-All examples work acceptably.
-
-NEW!
-====
-
-You are strongly recommended to use the new JavaFX PixelBuffer solution described below.
-
-JavaFX PixelBuffer
-------------------
-
-If you want to try the new experimental PixelBuffer being proposed for JavaFX, please switch to:
-
- * [pixelbuffer-test](https://github.com/caprica/vlcj-javafx/tree/pixelbuffer-test)
+See:
+ * https://github.com/caprica/vlcj/issues/883
+ * https://mail.openjdk.java.net/pipermail/openjfx-dev/2019-June/023347.html
 
 With the PixelBuffer the native video buffer is directly shared with JavaFX thereby avoiding full-frame
 copies for each video frame.
@@ -35,18 +17,6 @@ copies for each video frame.
 Performance is *really good* with PixelBuffer. This solution is likely to outperform the Swing/Java2D implementation
 and likely may be the best approach for a cross-platform media player (even on OSX, which has not supported the
 optimal embedded solution for a long time now.)
-
-If you're interested in vlcj with JavaFX you should lobby hard to get PixelBuffer included in the next JFX
-release!
-
-Getting Started
----------------
-
-At the moment this is rough and ready.
-
-You will need to edit the test class itself to specify the video file name.
- 
-Patches/pull-requests are welcome to improve this example.
 
 
 GPU Support

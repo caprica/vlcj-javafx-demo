@@ -19,12 +19,12 @@
 
 package uk.co.caprica.vlcj.javafx.test;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-
 import javafx.concurrent.ScheduledService;
 import javafx.concurrent.Task;
 import javafx.util.Duration;
+
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 /**
  *

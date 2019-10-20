@@ -47,6 +47,11 @@ public class AnimationTimerJavaFXDirectRenderingTest extends JavaFXDirectRenderi
     }
 
     @Override
+    protected void pauseTimer() {
+        timer.stop();
+    }
+
+    @Override
     protected void stopTimer() {
         timer.stop();
     }
