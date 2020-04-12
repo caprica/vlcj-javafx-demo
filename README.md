@@ -34,7 +34,7 @@ tested on Linux.
 Java/JavaFX Versions
 --------------------
 
-This example project now requires JDK 1.8 and JavaFX 13 (for the new PixelBuffer).
+This example project now requires JDK 11 and at least JavaFX 13 (for the new PixelBuffer).
 
 Note that it is still possible in your own projects to use some of the other examples in this project on JDK 1.7 or earlier versions of
 JavaFX if you need to support that.
