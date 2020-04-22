@@ -3,62 +3,88 @@
 vlcj-javafx-demo
 ================
 
-Demo showing how vlcj can be used to render video to a JavaFX Canvas.
+Demo showing how vlcj can be used to render video in a JavaFX scene.
 
-The new JavaFX PixelBuffer is used to avoid a full-frame buffer copy, this is the strongly recommended approach.
+The new JavaFX `PixelBuffer` is used to avoid a full-frame buffer copy, this is the strongly recommended approach.
 
-See:
- * https://github.com/caprica/vlcj/issues/883
- * https://mail.openjdk.java.net/pipermail/openjfx-dev/2019-June/023347.html
+With the PixelBuffer the native video buffer is directly shared with JavaFX thereby avoiding full-frame copies for each
+video frame.
 
-With the PixelBuffer the native video buffer is directly shared with JavaFX thereby avoiding full-frame
-copies for each video frame.
-
-Performance is *really good* with PixelBuffer. This solution is likely to outperform the Swing/Java2D implementation
+Performance is *really good* with `PixelBuffer`. This solution is likely to outperform the Swing/Java2D implementation
 and likely may be the best approach for a cross-platform media player (even on OSX, which has not supported the
 optimal embedded solution for a long time now.)
-
-GPU Support
------------
-
-GPU support even for modern video cards is pretty poor in JavaFX under Java7.
-
-nVidia cards seem to be better supported at the moment.
-
-If your video card is not supported then JavaFX will fall back to a software renderer. This will hobble your video playback performance.
-
-Java8 seems much better - i.e. some modern mainstream AMD graphic cards seem better supported. Under Java8 this sample application is
-working fine with a Radeon HD 7700 series video card on Linux. It of course works a lot better with an nVidia GeForce GTX 1050 Ti, also
-tested on Linux.
 
 Java/JavaFX Versions
 --------------------
 
 This example project now requires JDK 11 and at least JavaFX 13 (for the new PixelBuffer).
 
-Note that it is still possible in your own projects to use some of the other examples in this project on JDK 1.7 or earlier versions of
-JavaFX if you need to support that.
+VLC/LibVLC Versions
+-------------------
 
-Notes
------
+This example uses the new native thumbnailer that comes with LibVLC 4.0.0 - consequently VLC 4.0.0 is the minimum
+requirement.
 
-Contemporary versions of JavaFX provide a SwingNode so that it is possible to embed Swing components inside a JavaFX scene - so why not use this for vlcj?
+This version of VLC is still in development, you can either build it yourself or try a nightly build from the Videolan
+web site.
 
-Well, vlcj still would require a heavyweight AWT Canvas, and heavyweight components do not work with the SwingNode component.
+vlcj Versions
+-------------
 
-So whichever way you look at it, you're stuck with direct rendering, as per the test cases provided by this project.
+The latest vlcj-5.0.0-SNAPSHOT version is required.
 
-What might be an option for you is to go the otherway, using Swing/AWT for your vlcj video window and embedding a JavaFX scene inside your Swing application.
+Additional IDE Setup
+--------------------
 
-Memory Profile
---------------
+This project uses Lombok to reduce boilerplate. You may need to install a Lombok plugin for your IDE to make sure the
+Lombok annotation processors run each time you make a code change.
 
-Using the standard JVM settings (default garbage collector):
+Linux Notes
+-----------
 
-![Standard JVM Settings Memory Profile](https://github.com/caprica/vlcj-javafx/raw/master/doc/memory-profile-default-options.png "Standard Options Memory Profile")
+On Linux, the repaints can be glitchy if your scene graph is "busy", e.g. if you add multiple video views or numerous
+other nodes. This manifests itself as flickering painting on the later components (the ones added latest to the scene),
+and/or the background fill of the Scene leaking through to some other component.
 
-This test case plays a DVD ISO.
+If this is a problem, it is recommended to pass `-Dprism.dirtyopts=false` as a system property when starting the JVM.
 
-I can't really explain the behaviour of the garbage collector, it seems erratic and to change behaviour over time.
+This will incur a performance penalty.
 
-Nevertheless, there is clearly no memory leak, and it can run consistently in under 100Mb of heap memory.
+Similarly, if you add more components (especially something like a menu bar) and the repaint of the controls starts
+lagging on a dynamic re-size, passing `-Dprism.forceUploadingPainter=true` may help.
+
+See https://github.com/caprica/vlcj-javafx-demo/issues/31.
+
+See http://werner.yellowcouch.org/log/javafx-8-command-line-options for a list of the various JavaFX system properties
+available.
+
+If on Linux your application would cause LibX to be used, for example by opening a file chooser dialog box, this can
+cause a fatal JVM crash unless you pass `-DVLCJ_INITX=no` when starting the JVM.
+
+See https://github.com/caprica/vlcj/issues/929 and related issues.
+
+This is the command-line I generally use on Linux:
+
+```
+-DVLCJ_INITX=no -Dprism.dirtyopts=false -Dprism.forceUploadingPainter=true -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC
+```
+
+Screenshot
+----------
+
+An example showing a 3x3 grid of concurrent media players:
+
+![vlcj](https://github.com/caprica/vlcj-javafx-demo/raw/vlcj-5.x/doc/vlcj-javafx-multiview.jpg "vlcj JavaFX multiview concept")
+
+Videos
+------
+
+_These links go to YouTube._
+
+An example showing the basic configuration of this application with a single media player:
+
+[![](http://img.youtube.com/vi/S6MFewgHdn8/0.jpg)](https://www.youtube.com/watch?v=S6MFewgHdn8 "vlcj JavaFX concept")
+
+An example showing the configuration of this application with a 2x2 grid of concurrent media players:
+
+[![](http://img.youtube.com/vi/DUG5qS6dYZE/0.jpg)](https://www.youtube.com/watch?v=DUG5qS6dYZE "vlcj JavaFX multiview concept")

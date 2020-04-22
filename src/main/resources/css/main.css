@@ -1,0 +1,13 @@
+.split-pane {
+    -fx-padding: 1;
+}
+
+.split-pane .split-pane-divider {
+    -fx-border-color: transparent #1d1d1d transparent #1d1d1d;
+    -fx-background-color: transparent, derive(#1d1d1d, 10%);
+}
+
+.player-grid {
+    -fx-hgap: 1;
+    -fx-vgap: 1;
+}

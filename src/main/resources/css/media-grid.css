@@ -1,0 +1,50 @@
+.scroll-pane {
+    -fx-padding: 0;
+}
+
+.scroll-pane:focused {
+}
+
+.scroll-pane .corner {
+}
+
+.scroll-bar {
+    -fx-background-insets: 0;
+    -fx-background-color: black;
+    -fx-pref-width: 6;
+}
+
+.scroll-bar .decrement-button,
+.scroll-bar .increment-button {
+    -fx-padding: 0;
+}
+
+.scroll-bar .decrement-button .decrement-arrow,
+.scroll-bar .increment-button .increment-arrow {
+    -fx-padding: 0;
+}
+
+.scroll-bar .track {
+}
+
+.scroll-bar .thumb {
+    -fx-padding: 0;
+    -fx-background-insets: 0;
+    -fx-background-color: white;
+    -fx-background-radius: 0;
+}
+
+.grid {
+    -fx-background-color: black;
+    -fx-padding: 16;
+    -fx-hgap: 16;
+    -fx-vgap: 16;
+}
+
+.media-item {
+    -fx-opacity: 0.7;
+}
+
+.media-item:hover {
+    -fx-opacity: 1;
+}

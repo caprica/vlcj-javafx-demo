@@ -1,0 +1,45 @@
+.player-controls {
+    -fx-background-color: '#1a191a';
+    -fx-background-radius: 4;
+}
+
+.player-controls .button {
+    -fx-padding: 0;
+    -fx-background-radius: 0;
+    -fx-border-width: 0;
+    -fx-border-color: transparent;
+    -fx-opacity: 0.54;
+    -fx-background-color: '#1a191a';
+}
+
+.player-controls .button:hover {
+    -fx-opacity: 1.0;
+}
+
+.player-controls .slider {
+    -fx-pref-width: 50;
+}
+
+.player-controls .slider .track {
+    -fx-pref-height: 2;
+    -fx-background-color: '#555555';
+}
+
+.player-controls .slider .thumb {
+    -fx-background-color: '#c6c5c6';
+}
+
+.player-controls .volume.slider .thumb {
+    -fx-pref-width: 11;
+    -fx-pref-height: 11;
+}
+
+.player-controls .position.slider .thumb {
+    -fx-pref-width: 3;
+    -fx-pref-height: 15;
+    -fx-background-radius: 0;
+}
+
+.player-controls .label.timer {
+    -fx-text-fill: '#969596';
+}
