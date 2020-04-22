@@ -1,5 +1,8 @@
 ![vlcj](https://github.com/caprica/vlcj/raw/master/etc/vlcj-logo.png "vlcj")
 
+_For a brand-new bleeding edge demo application using the currently in development vlcj-5.0.0 and LibVLC 4.0.0, switch 
+to the [5.x development branch](https://github.com/caprica/vlcj-javafx-demo/tree/vlcj-5.x)._
+
 vlcj-javafx-demo
 ================
 
