@@ -75,10 +75,12 @@
             <artifactId>javafx-graphics</artifactId>
             <version>14</version>
         </dependency>
+        <!-- Ideally the Lombok dependencies would be provided scope, but to do so causes module problems -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>1.18.12</version>
+<!--            <scope>provided</scope>-->
         </dependency>
         <!-- Required for Lombok with modules -->
         <dependency>
@@ -127,6 +129,13 @@
                     <source>11</source>
                     <target>11</target>
                     <encoding>UTF-8</encoding>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>1.18.12</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
         </plugins>
