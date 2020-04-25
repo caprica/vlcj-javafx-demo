@@ -58,15 +58,10 @@ See https://github.com/caprica/vlcj-javafx-demo/issues/31.
 See http://werner.yellowcouch.org/log/javafx-8-command-line-options for a list of the various JavaFX system properties
 available.
 
-If on Linux your application would cause LibX to be used, for example by opening a file chooser dialog box, this can
-cause a fatal JVM crash unless you pass `-DVLCJ_INITX=no` when starting the JVM.
-
-See https://github.com/caprica/vlcj/issues/929 and related issues.
-
 This is the command-line I generally use on Linux:
 
 ```
--DVLCJ_INITX=no -Dprism.dirtyopts=false -Dprism.forceUploadingPainter=true -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC
+-Dprism.dirtyopts=false -Dprism.forceUploadingPainter=true -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC
 ```
 
 Screenshot
