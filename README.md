@@ -58,7 +58,7 @@ Memory Profile
 
 Using the standard JVM settings (default garbage collector):
 
-![Standard JVM Settings Memory Profile](https://github.com/caprica/vlcj-javafx/raw/master/doc/memory-profile-default-options.png "Standard Options Memory Profile")
+![Standard JVM Settings Memory Profile](https://github.com/caprica/vlcj-javafx-demo/raw/master/doc/memory-profile-default-options.png "Standard Options Memory Profile")
 
 This test case plays a DVD ISO.
 
