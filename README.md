@@ -83,3 +83,7 @@ An example showing the basic configuration of this application with a single med
 An example showing the configuration of this application with a 2x2 grid of concurrent media players:
 
 [![](http://img.youtube.com/vi/DUG5qS6dYZE/0.jpg)](https://www.youtube.com/watch?v=DUG5qS6dYZE "vlcj JavaFX multiview concept")
+
+An example showing picture-in-picture:
+
+[![](http://img.youtube.com/vi/k4j3hcJxc6g/0.jpg)](https://www.youtube.com/watch?v=k4j3hcJxc6g "vlcj JavaFX picture-in-picture concept")
