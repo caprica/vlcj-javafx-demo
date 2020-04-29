@@ -242,3 +242,10 @@ public class VlcjJavaFxApplication extends Application {
         launch(args);
     }
 }
+
+// Separate launcher to avoid the awesome Java Module System
+class VlcjJavaFxApplicationLauncher {
+    public static void main(String[] args) {
+        VlcjJavaFxApplication.main(args);
+    }
+}
