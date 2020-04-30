@@ -165,7 +165,7 @@ final public class PlayerView extends Pane {
     }
 
     public void play(String mrl) {
-        mediaPlayer.media().startPaused(mrl);
+        mediaPlayer.media().play(mrl);
     }
 
     public void release() {
