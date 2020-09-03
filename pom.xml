@@ -11,7 +11,7 @@
     <version>2.0.0-SNAPSHOT</version>
 
     <name>vlcj-javafx-demo</name>
-    <description>Example application showing vlcj rendering video in a JavaFX 13 application</description>
+    <description>Example application showing vlcj rendering video in a JavaFX 14 application</description>
     <url>http://www.capricasoftware.co.uk/vlcj</url>
     <inceptionYear>2013</inceptionYear>
 
@@ -72,12 +72,12 @@
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
-            <version>14.0.1</version>
+            <version>14.0.2.1</version>
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-graphics</artifactId>
-            <version>14.0.1</version>
+            <version>14.0.2.1</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
