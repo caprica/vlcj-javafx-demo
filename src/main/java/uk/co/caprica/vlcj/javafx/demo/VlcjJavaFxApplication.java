@@ -212,7 +212,6 @@ public class VlcjJavaFxApplication extends Application {
         mediaLoader.submit(() -> {
             try {
                 MediaSet mediaSet = MediaScanner.create()
-                    .followLinks()
                     .directory(MEDIA_DIRECTORY)
                     .matching("glob:**/*.{mp4,avi,flv}")    // Adjust to suit
                     .findMedia()
