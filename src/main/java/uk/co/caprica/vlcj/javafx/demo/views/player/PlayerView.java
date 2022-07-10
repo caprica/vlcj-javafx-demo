@@ -33,11 +33,10 @@ import javafx.scene.layout.Pane;
 import javafx.util.Duration;
 import uk.co.caprica.vlcj.factory.MediaPlayerFactory;
 import uk.co.caprica.vlcj.javafx.demo.controls.PlayerControls;
+import uk.co.caprica.vlcj.javafx.videosurface.ImageViewVideoSurface;
 import uk.co.caprica.vlcj.player.base.MediaPlayer;
 import uk.co.caprica.vlcj.player.base.MediaPlayerEventAdapter;
 import uk.co.caprica.vlcj.player.embedded.EmbeddedMediaPlayer;
-
-import static uk.co.caprica.vlcj.javafx.videosurface.ImageViewVideoSurfaceFactory.videoSurfaceForImageView;
 
 /**
  * Media player view component.
@@ -100,7 +99,7 @@ final public class PlayerView extends Pane {
         mediaPlayerFactory = new MediaPlayerFactory();
 
         mediaPlayer = mediaPlayerFactory.mediaPlayers().newEmbeddedMediaPlayer();
-        mediaPlayer.videoSurface().set(videoSurfaceForImageView(this.videoImageView));
+        mediaPlayer.videoSurface().set(new ImageViewVideoSurface(this.videoImageView));
         mediaPlayer.controls().setRepeat(true);
 
         setOnMouseEntered(this::handleMouseEntered);
