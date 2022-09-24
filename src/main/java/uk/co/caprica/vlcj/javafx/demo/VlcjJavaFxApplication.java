@@ -7,13 +7,12 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import uk.co.caprica.vlcj.factory.MediaPlayerFactory;
+import uk.co.caprica.vlcj.javafx.videosurface.ImageViewVideoSurface;
 import uk.co.caprica.vlcj.player.base.MediaPlayer;
 import uk.co.caprica.vlcj.player.base.MediaPlayerEventAdapter;
 import uk.co.caprica.vlcj.player.embedded.EmbeddedMediaPlayer;
 
 import java.util.List;
-
-import static uk.co.caprica.vlcj.javafx.videosurface.ImageViewVideoSurfaceFactory.videoSurfaceForImageView;
 
 /**
  *
@@ -53,7 +52,7 @@ public class VlcjJavaFxApplication extends Application {
         this.videoImageView = new ImageView();
         this.videoImageView.setPreserveRatio(true);
 
-        embeddedMediaPlayer.videoSurface().set(videoSurfaceForImageView(this.videoImageView));
+        embeddedMediaPlayer.videoSurface().set(new ImageViewVideoSurface(this.videoImageView));
     }
 
     @Override
@@ -101,4 +100,3 @@ public class VlcjJavaFxApplication extends Application {
         launch(args);
     }
 }
-

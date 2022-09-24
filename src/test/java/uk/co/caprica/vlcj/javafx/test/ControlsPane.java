@@ -36,7 +36,6 @@ import uk.co.caprica.vlcj.player.base.MediaPlayerEventAdapter;
 
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**

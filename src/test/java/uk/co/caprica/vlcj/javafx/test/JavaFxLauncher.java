@@ -1,6 +1,5 @@
 package uk.co.caprica.vlcj.javafx.test;
 
-import uk.co.caprica.vlcj.binding.LibX11;
 import uk.co.caprica.vlcj.factory.MediaPlayerFactory;
 
 /**

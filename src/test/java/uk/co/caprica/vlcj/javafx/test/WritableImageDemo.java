@@ -1,7 +1,5 @@
 package uk.co.caprica.vlcj.javafx.test;
 
-import java.nio.ByteBuffer;
-
 import javafx.animation.RotateTransition;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -24,6 +22,8 @@ import uk.co.caprica.vlcj.player.embedded.videosurface.callback.BufferFormat;
 import uk.co.caprica.vlcj.player.embedded.videosurface.callback.BufferFormatCallback;
 import uk.co.caprica.vlcj.player.embedded.videosurface.callback.RenderCallback;
 import uk.co.caprica.vlcj.player.embedded.videosurface.callback.format.RV32BufferFormat;
+
+import java.nio.ByteBuffer;
 
 /**
  * This example was contributed by Michael Paus, incorporated here with some minor
