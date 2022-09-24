@@ -142,8 +142,8 @@ final public class PlayerView extends Pane {
             }
 
             @Override
-            public void positionChanged(MediaPlayer mediaPlayer, float newPosition) {
-                Platform.runLater(() -> playerControls.setPosition(newPosition));
+            public void positionChanged(MediaPlayer mediaPlayer, double newPosition) {
+                Platform.runLater(() -> playerControls.setPosition((float) newPosition));
             }
 
             @Override
