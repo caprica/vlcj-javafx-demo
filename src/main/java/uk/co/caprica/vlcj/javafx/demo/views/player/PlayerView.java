@@ -30,9 +30,11 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
+import javafx.stage.Stage;
 import javafx.util.Duration;
 import uk.co.caprica.vlcj.factory.MediaPlayerFactory;
 import uk.co.caprica.vlcj.javafx.demo.controls.PlayerControls;
+import uk.co.caprica.vlcj.javafx.fullscreen.JavaFXFullScreenStrategy;
 import uk.co.caprica.vlcj.javafx.videosurface.ImageViewVideoSurface;
 import uk.co.caprica.vlcj.player.base.MediaPlayer;
 import uk.co.caprica.vlcj.player.base.MediaPlayerEventAdapter;
@@ -68,7 +70,7 @@ final public class PlayerView extends Pane {
     private double previousWidth = -1;
     private double previousHeight = -1;
 
-    public PlayerView() {
+    public PlayerView(Stage stage) {
         // Not sure if this helps or not
         setCache(true);
         setCacheHint(CacheHint.SPEED);
@@ -111,6 +113,12 @@ final public class PlayerView extends Pane {
         getChildren().addAll(this.videoImageView, playerControls);
 
         registerMediaPlayerEvents();
+
+        mediaPlayer.fullScreen().strategy(new JavaFXFullScreenStrategy(stage));
+
+        setOnMouseClicked(mouseEvent -> {
+            mediaPlayer.fullScreen().toggle();
+        });
     }
 
     private void registerMediaPlayerEvents() {

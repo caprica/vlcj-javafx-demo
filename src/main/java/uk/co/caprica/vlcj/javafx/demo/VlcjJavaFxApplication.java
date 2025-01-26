@@ -91,6 +91,11 @@ import java.util.concurrent.Executors;
  * This is the command-line I use on Linux:
  * <p>
  * -DVLCJ_INITX=no -Dprism.dirtyopts=false -Dprism.forceUploadingPainter=true -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC
+ * <p>
+ * Software renderer:
+ * <p>
+ * -Dprism.order=sw
+ * </p>
  */
 public class VlcjJavaFxApplication extends Application {
 
@@ -150,7 +155,7 @@ public class VlcjJavaFxApplication extends Application {
 
         this.playerViews = new PlayerView[PLAYERS];
         for (int i = 0; i < PLAYERS; i++) {
-            this.playerViews[i] = new PlayerView();
+            this.playerViews[i] = new PlayerView(primaryStage);
         }
 
         MediaGrid grid = new MediaGrid(mediaList, file -> {
