@@ -1,4 +1,4 @@
-module uk.co.caprica.vlcj.javafx.demo {
+module vlcj.javafx.demo {
     requires com.miglayout.javafx;
     requires javafx.base;
     requires javafx.controls;
